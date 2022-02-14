@@ -73,7 +73,10 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
 			ie.field_length                   = field_length;
 			ie.enterprise_number              = enterprise_number;
 
-			dolog(ll_debug, "process_ipfix_packet: field %d is type %d and is %senterprise, length is %d bytes (enterprise number: %d)", nr, ie_identifier, enterprise ? "" : "not ", field_length, enterprise_number);
+			if (enterprise)
+				dolog(ll_debug, "process_ipfix_packet: field %d is type %d and is enterprise, length is %d bytes (enterprise number: %d)", nr, ie_identifier, field_length, enterprise_number);
+			else
+				dolog(ll_debug, "process_ipfix_packet: field %d is type %d and is not enterprise, length is %d bytes", nr, ie_identifier, field_length);
 
 			template_.push_back(ie);
 		}
