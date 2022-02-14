@@ -37,7 +37,7 @@ uint32_t buffer::get_net_long()
 	if (o + 4 > size)
 		throw std::out_of_range("buffer::get_net_long");
 
-	uint16_t temp = ::get_net_long(&p[o]);
+	uint32_t temp = ::get_net_long(&p[o]);
 	o += 4;
 
 	return temp;
