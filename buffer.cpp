@@ -69,6 +69,17 @@ buffer buffer::get_segment(const int len)
 	return temp;
 }
 
+std::string buffer::get_string(const int len)
+{
+	if (o + len > size)
+		throw std::out_of_range("buffer::get_segment");
+
+	std::string temp = std::string(reinterpret_cast<const char *>(&p[o]), len);
+	o += len;
+
+	return temp;
+}
+
 void buffer::seek(const int len)
 {
 	if (o + len > size)

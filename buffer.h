@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 
 
 class buffer
@@ -18,15 +19,17 @@ public:
 	buffer(const buffer & b);
 	virtual ~buffer();
 
-	uint8_t  get_byte();
-	uint16_t get_net_short();  // 2 bytes
-	uint32_t get_net_long();  // 4 bytes
-	uint64_t get_net_long_long();  // 8 bytes
+	uint8_t     get_byte();
+	uint16_t    get_net_short();  // 2 bytes
+	uint32_t    get_net_long();  // 4 bytes
+	uint64_t    get_net_long_long();  // 8 bytes
 
-	buffer   get_segment(const int len);
+	buffer      get_segment(const int len);
 
-	void     seek(const int len);
+	std::string get_string(const int len);
 
-	bool     end_reached() const;
-	int      get_n_bytes_left() const;
+	void        seek(const int len);
+
+	bool        end_reached() const;
+	int         get_n_bytes_left() const;
 };
