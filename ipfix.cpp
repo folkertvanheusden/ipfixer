@@ -37,10 +37,15 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
 	uint16_t set_id     = b.get_net_short();
 	uint16_t set_length = b.get_net_short();
 
-	dolog(ll_debug, "process_ipfix_packet: set id: %04x", set_id);
-	dolog(ll_debug, "process_ipfix_packet: length: %d", set_length);
+	dolog(ll_debug, "process_ipfix_packet: set id    : %04x", set_id);
+	dolog(ll_debug, "process_ipfix_packet: set length: %d", set_length);
 
-	buffer   set        = b.get_segment(set_length);
+	if (set_length < 4) {
+		dolog(ll_debug, "process_ipfix_packet: set length invalid, must be at least 4");
+		return false;
+	}
+
+	buffer set = b.get_segment(set_length - 4);
 
 	if (set_id == 2) {  // template record
 		uint16_t template_id = set.get_net_short();
