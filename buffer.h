@@ -23,4 +23,7 @@ public:
 	buffer   get_segment(const int len);
 
 	void     seek(const int len);
+
+	bool     end_reached() const;
+	int      get_n_bytes_left() const;
 };

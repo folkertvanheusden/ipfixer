@@ -65,3 +65,13 @@ void buffer::seek(const int len)
 
 	o += len;
 }
+
+bool buffer::end_reached() const
+{
+	return o == size;
+}
+
+int buffer::get_n_bytes_left() const
+{
+	return size - o;
+}
