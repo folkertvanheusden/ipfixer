@@ -47,6 +47,17 @@ uint32_t buffer::get_net_long()
 	return temp;
 }
 
+uint64_t buffer::get_net_long_long()
+{
+	if (o + 8 > size)
+		throw std::out_of_range("buffer::get_net_long_long");
+
+	uint64_t temp = ::get_net_long_long(&p[o]);
+	o += 8;
+
+	return temp;
+}
+
 buffer buffer::get_segment(const int len)
 {
 	if (o + len > size)
