@@ -18,6 +18,8 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
 {
 	buffer b(packet, packet_size);
 
+	dolog(ll_debug, "process_ipfix_packet: packet size          : %d", packet_size);
+
 	// message header
 	uint16_t version_number        = b.get_net_short();
 	uint16_t length                = b.get_net_short();
@@ -35,10 +37,10 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
 	uint16_t set_id     = b.get_net_short();
 	uint16_t set_length = b.get_net_short();
 
-	buffer   set        = b.get_segment(set_length);
-
 	dolog(ll_debug, "process_ipfix_packet: set id: %04x", set_id);
 	dolog(ll_debug, "process_ipfix_packet: length: %d", set_length);
+
+	buffer   set        = b.get_segment(set_length);
 
 	if (set_id == 2) {  // template record
 		uint16_t template_id = set.get_net_short();
