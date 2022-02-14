@@ -42,10 +42,8 @@ int main(int argc, char *argv[])
 		}
 
 		try {
-			if (i.process_packet(buffer, rrc) == false) {
+			if (i.process_packet(buffer, rrc) == false)
 				dolog(ll_error, "main: problem processing ipfix packet");
-				break;
-			}
 		}
 		catch(const std::out_of_range & e) {
 			dolog(ll_error, "main: 'out of range' exception (%s); internal error", e.what());
