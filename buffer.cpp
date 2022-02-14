@@ -57,3 +57,11 @@ buffer buffer::get_segment(const int len)
 
 	return temp;
 }
+
+void buffer::seek(const int len)
+{
+	if (o + len > size)
+		throw std::out_of_range("buffer::seek");
+
+	o += len;
+}

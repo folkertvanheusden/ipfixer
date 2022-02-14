@@ -21,4 +21,6 @@ public:
 	uint32_t get_net_long();  // 4 bytes
 
 	buffer   get_segment(const int len);
+
+	void     seek(const int len);
 };
