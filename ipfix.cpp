@@ -610,6 +610,18 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
 	return true;
 }
 
+uint64_t get_variable_size_integer(buffer & data_source, const int len)
+{
+	uint64_t out = 0;
+
+	for(int i=0; i<len; i++) {
+		out <<= 8;
+		out |= data_source.get_byte();
+	}
+
+	return out;
+}
+
 std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const int len, buffer & data_source)
 {
 	std::optional<std::string> out = { };
@@ -623,18 +635,18 @@ std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const in
 			break;
 
 		case dt_unsigned16:
-			expected_length = 2;
-			out = myformat("0x%x", data_source.get_net_short());
+			expected_length = len <= 2 ? len : 2;
+			out = myformat("0x%x", uint16_t(get_variable_size_integer(data_source, len)));
 			break;
 
 		case dt_unsigned32:
-			expected_length = 4;
-			out = myformat("0x%x", data_source.get_net_long());
+			expected_length = len <= 4 ? len : 4;
+			out = myformat("0x%x", uint32_t(get_variable_size_integer(data_source, len)));
 			break;
 
 		case dt_unsigned64:
-			expected_length = 8;
-			out = myformat("0x%lx", data_source.get_net_long_long());
+			expected_length = len <= 8 ? len : 8;
+			out = myformat("0x%lx", get_variable_size_integer(data_source, len));
 			break;
 
 		case dt_signed8:
@@ -657,8 +669,8 @@ std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const in
 			out = myformat("0x%lx", static_cast<int64_t>(data_source.get_net_long_long()));
 			break;
 
-		// case dt_float32:
-		// case dt_float64:
+		// case dt_float32: note: reduced length encoding applies
+		// case dt_float64: note: reduced length encoding applies
 		case dt_boolean: {
 				expected_length = 8;
 				uint8_t v = data_source.get_byte();
