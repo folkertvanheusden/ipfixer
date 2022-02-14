@@ -1,7 +1,10 @@
 #include <map>
+#include <optional>
 #include <stdint.h>
 #include <string>
 #include <vector>
+
+#include "buffer.h"
 
 
 typedef struct
@@ -51,4 +54,6 @@ public:
 	virtual ~ipfix();
 
 	bool process_packet(const uint8_t *const packet, const int packet_size);
+
+	std::optional<std::string> data_to_str(const data_type_t & type, const int len, buffer & data_source);
 };
