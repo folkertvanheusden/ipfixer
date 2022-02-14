@@ -51,3 +51,15 @@ uint32_t get_net_long(const uint8_t *const p)
 {
 	return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
+
+uint64_t get_net_long_long(const uint8_t *const p)
+{
+	uint64_t out = 0;
+
+	for(int i=0; i<8; i++) {
+		out <<= 8;
+		out |= p[i];
+	}
+
+	return out;
+}
