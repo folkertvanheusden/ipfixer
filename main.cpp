@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <poll.h>
+#include <stdexcept>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -40,8 +41,14 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (i.process_packet(buffer, rrc) == false) {
-			dolog(ll_error, "main: problem processing ipfix packet");
+		try {
+			if (i.process_packet(buffer, rrc) == false) {
+				dolog(ll_error, "main: problem processing ipfix packet");
+				break;
+			}
+		}
+		catch(const std::out_of_range & e) {
+			dolog(ll_error, "main: 'out of range' exception (%s); internal error", e.what());
 			break;
 		}
 	}
