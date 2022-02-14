@@ -15,6 +15,8 @@ int main(int argc, char *argv[])
 {
 	setlog("test.log", ll_debug, ll_debug);
 
+	ipfix i;
+
 	int fd = create_udp_listen_socket(9995);
 
 	struct pollfd fds[] { { fd, POLLIN, 0 } };
@@ -38,7 +40,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (process_ipfix_packet(buffer, rrc) == false) {
+		if (i.process_packet(buffer, rrc) == false) {
 			dolog(ll_error, "main: problem processing ipfix packet");
 			break;
 		}
