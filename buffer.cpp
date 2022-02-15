@@ -58,6 +58,28 @@ uint64_t buffer::get_net_long_long()
 	return temp;
 }
 
+float buffer::get_net_float()
+{
+	if (o + 4 > size)
+		throw std::out_of_range("buffer::get_net_float");
+
+	uint32_t temp = ::get_net_long(&p[o]);
+	o += 4;
+
+	return *reinterpret_cast<float *>(&temp);
+}
+
+double buffer::get_net_double()
+{
+	if (o + 8 > size)
+		throw std::out_of_range("buffer::get_net_double");
+
+	uint64_t temp = ::get_net_long_long(&p[o]);
+	o += 8;
+
+	return *reinterpret_cast<double *>(&temp);
+}
+
 buffer buffer::get_segment(const int len)
 {
 	if (o + len > size)

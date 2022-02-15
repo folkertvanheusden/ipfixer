@@ -23,6 +23,8 @@ public:
 	uint16_t    get_net_short();  // 2 bytes
 	uint32_t    get_net_long();  // 4 bytes
 	uint64_t    get_net_long_long();  // 8 bytes
+	float       get_net_float();
+	double      get_net_double();
 
 	buffer      get_segment(const int len);
 
