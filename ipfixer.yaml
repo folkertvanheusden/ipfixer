@@ -4,6 +4,7 @@ storage:
   db: testdb
   collection: testcol
 listen-port: 9995
+protocol: ipfix
 logging:
   file: ipfixer.log
   loglevel-files: info

@@ -16,6 +16,7 @@
 #include "ipfix.h"
 #include "logging.h"
 #include "net.h"
+#include "netflow-v9.h"
 #include "yaml-helpers.h"
 
 
@@ -95,9 +96,17 @@ int main(int argc, char *argv[])
 		}
 
 		// port to listen on
-		int listen_port = yaml_get_int(config, "listen-port", "UDP port to listen on");
+		int         listen_port = yaml_get_int   (config, "listen-port", "UDP port to listen on");
+		std::string protocol    = yaml_get_string(config, "protocol", "protocol to accept; \"ipfix\" or \"v9\" (=netflow)");
 
-		ipfix i;
+		ipfix *i = nullptr;
+
+		if (protocol == "ipfix")
+			i = new ipfix();
+		else if (protocol == "v9")
+			i = new netflow_v9();
+		else
+			error_exit(false, "Protocol \"%s\" not supported/understood", protocol.c_str());
 
 		dolog(ll_debug, "main: will listen on port %d", listen_port);
 
@@ -124,11 +133,13 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			if (i.process_packet(buffer, rrc, db) == false)
+			if (i->process_packet(buffer, rrc, db) == false)
 				dolog(ll_error, "main: problem processing ipfix packet");
 		}
 
 		close(fd);
+
+		delete i;
 
 		delete db;
 	}
