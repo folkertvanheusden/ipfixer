@@ -119,3 +119,14 @@ int buffer::get_n_bytes_left() const
 {
 	return size - o;
 }
+
+const uint8_t *buffer::get_bytes(const int len)
+{
+	if (o + len > size)
+		throw std::out_of_range("buffer::get_bytes");
+
+	int temp = o;
+	o += len;
+
+	return &p[temp];
+}

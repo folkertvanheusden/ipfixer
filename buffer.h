@@ -25,6 +25,7 @@ public:
 	uint64_t    get_net_long_long();  // 8 bytes
 	float       get_net_float();
 	double      get_net_double();
+	const uint8_t * get_bytes(const int len);
 
 	buffer      get_segment(const int len);
 
