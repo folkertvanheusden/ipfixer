@@ -565,7 +565,7 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size, d
 		else if (set_id == 3) {  // options template sets
 			dolog(ll_warning, "process_ipfix_packet: options template sets not implemented");
 
-			return false;
+			// return false;
 		}
 		else if (set_id >= 256) {  // data sets
 			auto data_set = templates.find(set_id);
