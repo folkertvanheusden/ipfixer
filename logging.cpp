@@ -170,3 +170,8 @@ void DOLOG(const log_level_t ll, const char *fmt, ...)
 	free(str);
 	free(ts_str);
 }
+
+bool log_enabled(const log_level_t ll)
+{
+        return ll >= log_level_file || ll >= log_level_screen;
+}

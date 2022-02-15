@@ -13,6 +13,7 @@ void setlog(const char *lf, const log_level_t ll_file, const log_level_t ll_scre
 void setloguid(const int uid, const int gid);
 void closelog();
 void DOLOG(const log_level_t ll, const char *fmt, ...);
+bool log_enabled(const log_level_t ll);
 
 #define dolog(ll, ...) do {                                     \
         extern log_level_t log_level_file, log_level_screen;    \
