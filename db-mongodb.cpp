@@ -23,9 +23,9 @@ db_mongodb::~db_mongodb()
 
 bool db_mongodb::insert(const db_record_t & dr)
 {
-	mongocxx::database   db              = (*m_c)[database];
+	mongocxx::database                db              = (*m_c)[database];
 
-	mongocxx::collection work_collection = db[collection];
+	mongocxx::collection              work_collection = db[collection];
 
 	bsoncxx::builder::basic::document doc;
 
@@ -42,7 +42,7 @@ bool db_mongodb::insert(const db_record_t & dr)
 
 	bsoncxx::stdx::optional<mongocxx::result::insert_one> result = work_collection.insert_one(doc.view());
 
-	if (result == boost::none) {
+	if (!result) {
 		dolog(ll_warning, "db_mongodb::insert: no result for document insert returned");
 
 		return false;
