@@ -1,5 +1,7 @@
+#include <atomic>
 #include <errno.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdexcept>
 #include <stdio.h>
 #include <string.h>
@@ -12,9 +14,20 @@
 #include "net.h"
 
 
+std::atomic_bool stop_flag { false };
+
+void sigh(int sig)
+{
+	stop_flag = true;
+
+	dolog(ll_info, "Terminating...");
+}
+
 int main(int argc, char *argv[])
 {
 	setlog("test.log", ll_debug, ll_debug);
+
+	signal(SIGINT, sigh);
 
 	ipfix i;
 
@@ -22,7 +35,7 @@ int main(int argc, char *argv[])
 
 	struct pollfd fds[] { { fd, POLLIN, 0 } };
 
-	for(;;) {
+	while(!stop_flag) {
 		int rcp = poll(fds, 1, 500);
 
 		if (rcp == 0)  // timeout

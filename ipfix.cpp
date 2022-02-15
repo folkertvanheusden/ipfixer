@@ -477,6 +477,8 @@ ipfix::ipfix()
 
 ipfix::~ipfix()
 {
+	templates.clear();
+	field_types.clear();
 }
 
 bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
