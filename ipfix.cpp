@@ -640,7 +640,18 @@ std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const in
 	int expected_length = -1;
 
 	switch(type) {
-		// case dt_octetArray:
+		case dt_octetArray: {
+				expected_length = len;
+
+				std::string temp;
+
+				for(int i=0; i<len; i++)
+					temp += myformat("%02x", data_source.get_byte());
+
+				out = temp;
+		    	}
+			break;
+
 		case dt_unsigned8:
 			expected_length = 1;
 			out = myformat("%u", data_source.get_byte());
@@ -681,8 +692,20 @@ std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const in
 			out = myformat("%ld", static_cast<int64_t>(data_source.get_net_long_long()));
 			break;
 
-		// case dt_float32: note: reduced length encoding applies
-		// case dt_float64: note: reduced length encoding applies
+		case dt_float32: {
+				expected_length = 4;
+				uint32_t temp = data_source.get_net_long();
+				out = myformat("%f", *reinterpret_cast<float *>(&temp));
+			}
+			break;
+
+		case dt_float64: {
+				expected_length = 8;
+				uint64_t temp = data_source.get_net_long();
+				out = myformat("%f", *reinterpret_cast<double *>(&temp));
+			}
+			break;
+
 		case dt_boolean: {
 				expected_length = 8;
 				uint8_t v = data_source.get_byte();
@@ -712,10 +735,26 @@ std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const in
 			out = data_source.get_string(len);
 			break;
 
-		// case dt_dateTimeSeconds:
-		// case dt_dateTimeMilliseconds:
-		// case dt_dateTimeMicroseconds:
-		// case dt_dateTimeNanoseconds:
+		case dt_dateTimeSeconds:
+			expected_length = 4;
+			out = myformat("%u", data_source.get_net_long());
+			break;
+
+		case dt_dateTimeMilliseconds:
+			expected_length = 8;
+			out = myformat("%lu", data_source.get_net_long_long());
+			break;
+
+		case dt_dateTimeMicroseconds:
+			expected_length = 8;
+			out = myformat("%lu", data_source.get_net_long_long());
+			break;
+
+		case dt_dateTimeNanoseconds:
+			expected_length = 8;
+			out = myformat("%lu", data_source.get_net_long_long());
+			break;
+
 		case dt_ipv4Address: {
 				expected_length = 4;
 
