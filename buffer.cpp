@@ -130,3 +130,15 @@ const uint8_t *buffer::get_bytes(const int len)
 
 	return &p[temp];
 }
+
+uint64_t get_variable_size_integer(buffer & data_source, const int len)
+{
+	uint64_t out = 0;
+
+	for(int i=0; i<len; i++) {
+		out <<= 8;
+		out |= data_source.get_byte();
+	}
+
+	return out;
+}

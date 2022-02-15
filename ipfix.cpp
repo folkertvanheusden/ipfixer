@@ -629,18 +629,6 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size, d
 	return true;
 }
 
-uint64_t get_variable_size_integer(buffer & data_source, const int len)
-{
-	uint64_t out = 0;
-
-	for(int i=0; i<len; i++) {
-		out <<= 8;
-		out |= data_source.get_byte();
-	}
-
-	return out;
-}
-
 std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const int len, buffer & data_source)
 {
 	std::optional<std::string> out = { };
