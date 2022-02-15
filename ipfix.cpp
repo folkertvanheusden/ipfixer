@@ -633,42 +633,42 @@ std::optional<std::string> ipfix::data_to_str(const data_type_t & type, const in
 		// case dt_octetArray:
 		case dt_unsigned8:
 			expected_length = 1;
-			out = myformat("0x%x", data_source.get_byte());
+			out = myformat("%u", data_source.get_byte());
 			break;
 
 		case dt_unsigned16:
 			expected_length = len <= 2 ? len : 2;
-			out = myformat("0x%x", uint16_t(get_variable_size_integer(data_source, len)));
+			out = myformat("%u", uint16_t(get_variable_size_integer(data_source, len)));
 			break;
 
 		case dt_unsigned32:
 			expected_length = len <= 4 ? len : 4;
-			out = myformat("0x%x", uint32_t(get_variable_size_integer(data_source, len)));
+			out = myformat("%u", uint32_t(get_variable_size_integer(data_source, len)));
 			break;
 
 		case dt_unsigned64:
 			expected_length = len <= 8 ? len : 8;
-			out = myformat("0x%lx", get_variable_size_integer(data_source, len));
+			out = myformat("%lu", get_variable_size_integer(data_source, len));
 			break;
 
 		case dt_signed8:
 			expected_length = 1;
-			out = myformat("0x%x", static_cast<int8_t>(data_source.get_byte()));
+			out = myformat("%d", static_cast<int8_t>(data_source.get_byte()));
 			break;
 
 		case dt_signed16:
 			expected_length = 2;
-			out = myformat("0x%x", static_cast<int16_t>(data_source.get_net_short()));
+			out = myformat("%d", static_cast<int16_t>(data_source.get_net_short()));
 			break;
 
 		case dt_signed32:
 			expected_length = 4;
-			out = myformat("0x%x", static_cast<int32_t>(data_source.get_net_long()));
+			out = myformat("%d", static_cast<int32_t>(data_source.get_net_long()));
 			break;
 
 		case dt_signed64:
 			expected_length = 8;
-			out = myformat("0x%lx", static_cast<int64_t>(data_source.get_net_long_long()));
+			out = myformat("%ld", static_cast<int64_t>(data_source.get_net_long_long()));
 			break;
 
 		// case dt_float32: note: reduced length encoding applies
