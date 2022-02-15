@@ -1,0 +1,10 @@
+storage:
+  type: mongodb
+  uri: mongodb://localhost:27017
+  db: testdb
+  collection: testcol
+listen-port: 9995
+logging:
+  file: ipfixer.log
+  loglevel-files: info
+  loglevel-screen: info

@@ -23,6 +23,7 @@ add_executable(ipfixer
 	net.cpp
 	str.cpp
 	time.cpp
+	yaml-helpers.cpp
 	)
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -38,3 +39,8 @@ pkg_check_modules(LIBMONGOCXX libmongocxx)
 target_link_libraries(ipfixer ${LIBMONGOCXX_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${LIBMONGOCXX_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${LIBMONGOCXX_CFLAGS_OTHER})
+
+pkg_check_modules(YAML REQUIRED yaml-cpp)
+target_link_libraries(ipfixer ${YAML_LIBRARIES})
+target_include_directories(ipfixer PUBLIC ${YAML_INCLUDE_DIRS})
+target_compile_options(ipfixer PUBLIC ${YAML_CFLAGS_OTHER})
