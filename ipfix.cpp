@@ -481,7 +481,7 @@ ipfix::~ipfix()
 	field_types.clear();
 }
 
-bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
+bool ipfix::process_packet(const uint8_t *const packet, const int packet_size, db *const target)
 {
 	buffer b(packet, packet_size);
 
@@ -578,6 +578,11 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
 
 			dolog(ll_debug, "process_ipfix_packet: template %d has %zu elements", set_id, data_set->second.size());
 
+			db_record_t db_record;
+			db_record.export_time           = export_time;
+			db_record.sequence_number       = sequence_number;
+			db_record.observation_domain_id = observation_domain_id;
+
 			for(auto field : data_set->second) {
 				auto it = field_types.find(field.information_element_identifier);
 
@@ -596,7 +601,12 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size)
 				}
 
 				dolog(ll_debug, "process_ipfix_packet: information element %s of type %d: \"%s\"", it->second.first.c_str(), it->second.second, data.value().c_str());
+
+				db_record.data.insert({ it->second.first, data.value() });
 			}
+
+			if (target)
+				target->insert(db_record);
 		}
 		else {
 			dolog(ll_error, "process_ipfix_packet: set type %d not implemented", set_id);

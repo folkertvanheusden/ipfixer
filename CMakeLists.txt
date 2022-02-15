@@ -14,6 +14,8 @@ add_compile_options(-Wall -pedantic)
 
 add_executable(ipfixer
 	buffer.cpp
+	db.cpp
+	db-mongodb.cpp
 	error.cpp
 	ipfix.cpp
 	logging.cpp
@@ -28,9 +30,11 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads)
 target_link_libraries(ipfixer Threads::Threads)
 
-#include(FindPkgConfig)
+configure_file(config.h.in config.h)
 
-#pkg_check_modules(SNDFILE REQUIRED sndfile)
-#target_link_libraries(myip ${SNDFILE_LIBRARIES})
-#target_include_directories(myip PUBLIC ${SNDFILE_INCLUDE_DIRS})
-#target_compile_options(myip PUBLIC ${SNDFILE_CFLAGS_OTHER})
+include(FindPkgConfig)
+
+pkg_check_modules(LIBMONGOCXX libmongocxx)
+target_link_libraries(ipfixer ${LIBMONGOCXX_LIBRARIES})
+target_include_directories(ipfixer PUBLIC ${LIBMONGOCXX_INCLUDE_DIRS})
+target_compile_options(ipfixer PUBLIC ${LIBMONGOCXX_CFLAGS_OTHER})

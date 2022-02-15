@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include "db.h"
+#include "db-mongodb.h"
 #include "ipfix.h"
 #include "logging.h"
 #include "net.h"
@@ -30,6 +32,8 @@ int main(int argc, char *argv[])
 	signal(SIGINT, sigh);
 
 	ipfix i;
+
+	db *db = new db_mongodb("mongodb://localhost:27017", "testdb", "testcol");
 
 	int fd = create_udp_listen_socket(9995);
 
@@ -55,7 +59,7 @@ int main(int argc, char *argv[])
 		}
 
 		try {
-			if (i.process_packet(buffer, rrc) == false)
+			if (i.process_packet(buffer, rrc, db) == false)
 				dolog(ll_error, "main: problem processing ipfix packet");
 		}
 		catch(const std::out_of_range & e) {
@@ -65,6 +69,8 @@ int main(int argc, char *argv[])
 	}
 
 	close(fd);
+
+	delete db;
 
 	return 0;
 }
