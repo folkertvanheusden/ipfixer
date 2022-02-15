@@ -61,6 +61,8 @@ int main(int argc, char *argv[])
 	YAML::Node config;
 
 	try {
+		dolog(ll_debug, "Loading configuration file: \"%s\"", cfg_file.c_str());
+
 		config = YAML::LoadFile(cfg_file);
 	}
 	catch(const YAML::BadFile & bf) {
@@ -96,6 +98,8 @@ int main(int argc, char *argv[])
 		int listen_port = yaml_get_int(config, "listen-port", "UDP port to listen on");
 
 		ipfix i;
+
+		dolog(ll_debug, "main: will listen on port %d", listen_port);
 
 		int fd = create_udp_listen_socket(listen_port);
 
