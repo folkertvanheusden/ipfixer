@@ -4,16 +4,9 @@
 #include <string>
 #include <time.h>
 
+#include "buffer.h"
+#include "db-common.h"
 
-typedef struct
-{
-	time_t   export_time;
-	uint32_t sequence_number;
-	uint32_t observation_domain_id;
-
-	// key, value
-	std::map<std::string, std::string> data;
-} db_record_t;
 
 class db
 {

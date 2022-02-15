@@ -592,17 +592,24 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size, d
 					return false;
 				}
 
-				std::optional<std::string> data = data_to_str(it->second.second, field.field_length, set);
+				// value, type of value (e.g. int, float, string), length of it
+				db_record_data_t drd { set.get_segment(field.field_length), it->second.second, field.field_length };
 
-				if (data.has_value() == false) {
-					dolog(ll_debug, "process_ipfix_packet: information element %s of type %d: cannot convert, type not supported or invalid data", it->second.first.c_str(), it->second.second);
+				if (log_enabled(ll_debug)) {
+					buffer copy = drd.b;
 
-					return false;
+					std::optional<std::string> data = data_to_str(it->second.second, field.field_length, copy);
+
+					if (data.has_value() == false) {
+						dolog(ll_debug, "process_ipfix_packet: information element %s of type %d: cannot convert, type not supported or invalid data", it->second.first.c_str(), it->second.second);
+
+						return false;
+					}
+
+					dolog(ll_debug, "process_ipfix_packet: information element %s of type %d: \"%s\"", it->second.first.c_str(), it->second.second, data.value().c_str());
 				}
 
-				dolog(ll_debug, "process_ipfix_packet: information element %s of type %d: \"%s\"", it->second.first.c_str(), it->second.second, data.value().c_str());
-
-				db_record.data.insert({ it->second.first, data.value() });
+				db_record.data.insert({ it->second.first, drd });
 			}
 
 			if (target)
