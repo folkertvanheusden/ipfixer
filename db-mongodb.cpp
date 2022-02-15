@@ -46,7 +46,11 @@ bool db_mongodb::insert(const db_record_t & dr)
 			case dt_macAddress: {
 					const uint8_t *bytes = element_data.b.get_bytes(element_data.len);
 
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, bsoncxx::document::view(bytes, size_t(element_data.len))));
+					bsoncxx::types::b_binary binary_data;
+					binary_data.size = element_data.len;
+					binary_data.bytes = bytes;
+
+					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, binary_data));
 				}
 				break;
 
@@ -54,12 +58,16 @@ bool db_mongodb::insert(const db_record_t & dr)
 				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_byte()));
 				break;
 
-			case dt_unsigned16:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_net_short()));
+			case dt_unsigned16: {
+					uint16_t temp = get_variable_size_integer(element_data.b, element_data.len);
+
+					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, temp));
+				}
 				break;
 
 			case dt_unsigned32: {
-					uint32_t temp = element_data.b.get_net_long();
+					uint32_t temp = get_variable_size_integer(element_data.b, element_data.len);
+
 					if (temp > 2147483647) 
 						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(temp)));
 					else
@@ -67,9 +75,12 @@ bool db_mongodb::insert(const db_record_t & dr)
 				}
 				break;
 
-			case dt_unsigned64:
-				// hope for the best! (will fail when value > 0x7fffffffffffffff)
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(element_data.b.get_net_long_long())));
+			case dt_unsigned64: {
+					uint64_t temp = get_variable_size_integer(element_data.b, element_data.len);
+
+					// hope for the best! (will fail when value > 0x7fffffffffffffff)
+					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(temp)));
+				}
 				break;
 
 			case dt_signed8:
@@ -128,9 +139,9 @@ bool db_mongodb::insert(const db_record_t & dr)
 				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(element_data.b.get_net_long_long())));
 				break;
 
-//			case dt_basicList:
-//			case dt_subTemplateList:
-//			case dt_subTemplateMultiList:
+//			case dt_basicList:  TODO
+//			case dt_subTemplateList:  TODO
+//			case dt_subTemplateMultiList:  TODO
 			default:
 				dolog(ll_warning, "db_mongodb::insert: data type %d not supported for MongoDB target", element_data.dt);
 
