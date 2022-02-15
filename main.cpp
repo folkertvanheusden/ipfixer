@@ -32,6 +32,7 @@ void sigh(int sig)
 void help()
 {
 	printf("-c file  load configuration from 'file'\n");
+	printf("-f       fork into the background\n");
 	printf("-h       this help\n");
 }
 
@@ -42,11 +43,14 @@ int main(int argc, char *argv[])
 	signal(SIGINT, sigh);
 
 	std::string cfg_file = "ipfixer.yaml";
+	bool        do_fork  = false;
 
 	int c = -1;
-	while((c = getopt(argc, argv, "c:h")) != -1) {
+	while((c = getopt(argc, argv, "c:fh")) != -1) {
 		if (c == 'c')
 			cfg_file = optarg;
+		else if (c == 'f')
+			do_fork = true;
 		else if (c == 'h') {
 			help();
 			return 0;
@@ -111,6 +115,11 @@ int main(int argc, char *argv[])
 		dolog(ll_debug, "main: will listen on port %d", listen_port);
 
 		int fd = create_udp_listen_socket(listen_port);
+
+		if (do_fork) {
+			if (daemon(-1, -1) == -1)
+				error_exit(true, "main: can't become daemon process");
+		}
 
 		struct pollfd fds[] { { fd, POLLIN, 0 } };
 
