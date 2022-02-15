@@ -1,8 +1,9 @@
 what it is
 ----------
 
-ipfixer is a collector for IPFIX data. This data is
-captured and then stored in e.g. a MondoDB database.
+ipfixer is a collector for IPFIX and NetFlow v9 data.
+This data is captured and then stored in e.g. a
+MondoDB database.
 
 
 compiling
