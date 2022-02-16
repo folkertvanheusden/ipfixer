@@ -33,9 +33,6 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads)
 target_link_libraries(ipfixer Threads::Threads)
 
-configure_file(config.h.in config.h)
-target_include_directories(ipfixer PUBLIC "${PROJECT_BINARY_DIR}")
-
 include(FindPkgConfig)
 
 pkg_check_modules(LIBMONGOCXX libmongocxx)
@@ -61,3 +58,6 @@ target_compile_options(ipfixer PUBLIC ${JANSSON_CFLAGS_OTHER})
 target_link_libraries(ipfixer ${MARIADB_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${MARIADB_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${MARIADB_CFLAGS_OTHER})
+
+configure_file(config.h.in config.h)
+target_include_directories(ipfixer PUBLIC "${PROJECT_BINARY_DIR}")

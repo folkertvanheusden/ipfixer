@@ -1,3 +1,5 @@
+#include "config.h"
+#if POSTGRES_FOUND == 1
 #include <pqxx/pqxx>
 
 #include "db.h"
@@ -18,3 +20,4 @@ public:
 
 	bool insert(const db_record_t & dr) override;
 };
+#endif
