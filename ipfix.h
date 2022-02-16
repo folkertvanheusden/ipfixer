@@ -23,5 +23,5 @@ public:
 
 	virtual bool process_packet(const uint8_t *const packet, const int packet_size, db *const target);
 
-	std::optional<std::string> data_to_str(const data_type_t & type, const int len, buffer & data_source);
+	static std::optional<std::string> data_to_str(const data_type_t & type, const int len, buffer & data_source);
 };

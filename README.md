@@ -9,13 +9,18 @@ MondoDB database.
 compiling
 ---------
 
-The following packages are required:
+The following package is required:
 
  * libyaml-cpp-dev
+
+Optional packages:
 
  * libmongocxx-dev  at moment of writing (February
                     2022) this package is in Debian
                     in the 'experimental' branch)
+
+ * libpqxx-dev      Postgres support
+ * libjansson-dev   Required for Postgres
 
 
 Then:

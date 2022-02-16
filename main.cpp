@@ -12,6 +12,7 @@
 
 #include "db.h"
 #include "db-mongodb.h"
+#include "db-postgres.h"
 #include "error.h"
 #include "ipfix.h"
 #include "logging.h"
@@ -86,17 +87,22 @@ int main(int argc, char *argv[])
 
 		// select target
 		YAML::Node cfg_storage = config["storage"];
-		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to - currently only mongodb");
-		if (storage_type != "mongodb")
-			error_exit(false, "Currently only \"MongoDB\" is supported");
-
-		std::string storage_uri = yaml_get_string(cfg_storage, "uri", "Database URI");
+		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to; 'mongodb' or 'postgres'");
 
 		if (storage_type == "mongodb") {
+			std::string mongodb_uri = yaml_get_string(cfg_storage, "uri", "MongoDB URI");
 			std::string mongodb_db = yaml_get_string(cfg_storage, "db", "MongoDB database to write to");
 			std::string mongodb_collection = yaml_get_string(cfg_storage, "collection", "collection to write to");
 
-			db = new db_mongodb(storage_uri, mongodb_db, mongodb_collection);
+			db = new db_mongodb(mongodb_uri, mongodb_db, mongodb_collection);
+		}
+		else if (storage_type == "postgres") {
+			std::string connection_info = yaml_get_string(cfg_storage, "connection-info", "Postgres connection info string");
+
+			db = new db_postgres(connection_info);
+		}
+		else {
+			error_exit(false, "Database \"%s\" not supported/understood", storage_type.c_str());
 		}
 
 		// port to listen on
