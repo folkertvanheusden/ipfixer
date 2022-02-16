@@ -48,6 +48,13 @@ sure you correclty configured IPFIX or NetFlow
 depending on what the emitter is producing.
 
 
+tested with
+-----------
+
+* softflowd   - https://github.com/irino/softflowd
+* ipt_NETFLOW - https://github.com/aabc/ipt-netflow
+
+
 Written by Folkert van Heusden <mail@vanheusden.com>
 
 Released under AGPL v2.0
