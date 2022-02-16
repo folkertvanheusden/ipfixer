@@ -9,6 +9,6 @@ storage:
 listen-port: 9995
 protocol: ipfix
 logging:
-  file: ipfixer.log
+  file: /var/log/ipfixer.log
   loglevel-files: debug
   loglevel-screen: debug
