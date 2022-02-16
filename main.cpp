@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <yaml-cpp/exceptions.h>
 #include <yaml-cpp/yaml.h>
 
 #include "config.h"
@@ -171,6 +172,9 @@ int main(int argc, char *argv[])
 	}
 	catch(const std::string & e) {
 		dolog(ll_error, "main: an error occured: \"%s\"", e.c_str());
+	}
+	catch(const YAML::Exception & e) {
+		dolog(ll_error, "During processing of the configuration (yaml-) file, the following error occured: %s", e.what());
 	}
 
 	return 0;
