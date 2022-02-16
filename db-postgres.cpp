@@ -1,6 +1,6 @@
 #include "config.h"
-#if HAVE_POSTGRES == 1
-#if HAVE_JANSSON != 1
+#if POSTGRES_FOUND == 1
+#if JANSSON_FOUND != 1
 #error libjansson is required for postgresql
 #endif
 #include <jansson.h>

@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <yaml-cpp/yaml.h>
 
+#include "config.h"
 #include "db.h"
 #include "db-mongodb.h"
 #include "db-postgres.h"
@@ -96,11 +97,13 @@ int main(int argc, char *argv[])
 
 			db = new db_mongodb(mongodb_uri, mongodb_db, mongodb_collection);
 		}
+#if POSTGRES_FOUND == 1
 		else if (storage_type == "postgres") {
 			std::string connection_info = yaml_get_string(cfg_storage, "connection-info", "Postgres connection info string");
 
 			db = new db_postgres(connection_info);
 		}
+#endif
 		else {
 			error_exit(false, "Database \"%s\" not supported/understood", storage_type.c_str());
 		}
