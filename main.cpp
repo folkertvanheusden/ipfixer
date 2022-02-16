@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
 		YAML::Node cfg_storage = config["storage"];
 		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to; 'mongodb' or 'postgres'");
 
+#if LIBMONGOCXX_FOUND == 1
 		if (storage_type == "mongodb") {
 			std::string mongodb_uri = yaml_get_string(cfg_storage, "uri", "MongoDB URI");
 			std::string mongodb_db = yaml_get_string(cfg_storage, "db", "MongoDB database to write to");
@@ -97,8 +98,10 @@ int main(int argc, char *argv[])
 
 			db = new db_mongodb(mongodb_uri, mongodb_db, mongodb_collection);
 		}
+		else
+#endif
 #if POSTGRES_FOUND == 1
-		else if (storage_type == "postgres") {
+		if (storage_type == "postgres") {
 			std::string connection_info = yaml_get_string(cfg_storage, "connection-info", "Postgres connection info string");
 
 			db = new db_postgres(connection_info);

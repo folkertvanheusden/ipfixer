@@ -1,3 +1,5 @@
+#include "config.h"
+#if LIBMONGOCXX_FOUND == 1
 #include <mongocxx/client.hpp>
 
 #include "db.h"
@@ -16,3 +18,4 @@ public:
 
 	bool insert(const db_record_t & dr) override;
 };
+#endif
