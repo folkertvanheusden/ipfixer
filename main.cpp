@@ -127,6 +127,8 @@ int main(int argc, char *argv[])
 		dolog(ll_debug, "main: will listen on port %d", listen_port);
 
 		int fd = create_udp_listen_socket(listen_port);
+		if (fd == -1)
+			error_exit(true, "Cannot create UDP listening socket on port %d", listen_port);
 
 		if (do_fork) {
 			if (daemon(-1, -1) == -1)
