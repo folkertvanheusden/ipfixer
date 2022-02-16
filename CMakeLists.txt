@@ -33,9 +33,6 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads)
 target_link_libraries(ipfixer Threads::Threads)
 
-configure_file(config.h.in config.h)
-target_include_directories(ipfixer PUBLIC "${PROJECT_BINARY_DIR}")
-
 include(FindPkgConfig)
 
 pkg_check_modules(LIBMONGOCXX libmongocxx)
@@ -57,3 +54,6 @@ pkg_check_modules(JANSSON jansson)
 target_link_libraries(ipfixer ${JANSSON_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${JANSSON_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${JANSSON_CFLAGS_OTHER})
+
+configure_file(config.h.in config.h)
+target_include_directories(ipfixer PUBLIC "${PROJECT_BINARY_DIR}")

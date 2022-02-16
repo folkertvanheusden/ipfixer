@@ -1,3 +1,5 @@
+#include "config.h"
+#if LIBMONGOCXX_FOUND == 1
 #include <bsoncxx/builder/stream/document.hpp>
 #include <chrono>
 #include <mongocxx/client.hpp>
@@ -169,3 +171,4 @@ bool db_mongodb::insert(const db_record_t & dr)
 
 	return true;
 }
+#endif

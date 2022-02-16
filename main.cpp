@@ -8,8 +8,10 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <yaml-cpp/exceptions.h>
 #include <yaml-cpp/yaml.h>
 
+#include "config.h"
 #include "db.h"
 #include "db-mongodb.h"
 #include "db-postgres.h"
@@ -89,6 +91,7 @@ int main(int argc, char *argv[])
 		YAML::Node cfg_storage = config["storage"];
 		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to; 'mongodb' or 'postgres'");
 
+#if LIBMONGOCXX_FOUND == 1
 		if (storage_type == "mongodb") {
 			std::string mongodb_uri = yaml_get_string(cfg_storage, "uri", "MongoDB URI");
 			std::string mongodb_db = yaml_get_string(cfg_storage, "db", "MongoDB database to write to");
@@ -96,11 +99,15 @@ int main(int argc, char *argv[])
 
 			db = new db_mongodb(mongodb_uri, mongodb_db, mongodb_collection);
 		}
-		else if (storage_type == "postgres") {
+		else
+#endif
+#if POSTGRES_FOUND == 1
+		if (storage_type == "postgres") {
 			std::string connection_info = yaml_get_string(cfg_storage, "connection-info", "Postgres connection info string");
 
 			db = new db_postgres(connection_info);
 		}
+#endif
 		else {
 			error_exit(false, "Database \"%s\" not supported/understood", storage_type.c_str());
 		}
@@ -121,6 +128,8 @@ int main(int argc, char *argv[])
 		dolog(ll_debug, "main: will listen on port %d", listen_port);
 
 		int fd = create_udp_listen_socket(listen_port);
+		if (fd == -1)
+			error_exit(true, "Cannot create UDP listening socket on port %d", listen_port);
 
 		if (do_fork) {
 			if (daemon(-1, -1) == -1)
@@ -163,6 +172,9 @@ int main(int argc, char *argv[])
 	}
 	catch(const std::string & e) {
 		dolog(ll_error, "main: an error occured: \"%s\"", e.c_str());
+	}
+	catch(const YAML::Exception & e) {
+		dolog(ll_error, "During processing of the configuration (yaml-) file, the following error occured: %s", e.what());
 	}
 
 	return 0;
