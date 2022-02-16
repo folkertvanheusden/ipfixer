@@ -1,12 +1,18 @@
 #storage:
-#type: mongodb
-#uri: mongodb://localhost:27017
-#db: testdb
-#collection: testcol
+#  type: mongodb
+#  uri: mongodb://localhost:27017
+#  db: testdb
+#  collection: testcol
+#storage:
+#  type: mysql
+#  host: localhost
+#  user: ipfix
+#  pass: ipfix
+#  db: ipfix
 storage:
   type: postgres
   connection-info: 'host=127.0.0.1 port=5434 dbname=ipfixpg user=ipfix password=ipfix'
-listen-port: 9995
+listen-port: 4739
 protocol: ipfix
 logging:
   file: /var/log/ipfixer.log

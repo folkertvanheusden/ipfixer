@@ -22,6 +22,9 @@ Optional packages:
  * libpqxx-dev      PostgreSQL support
  * libjansson-dev   Required for PostgreSQL
 
+ * libmariadb-dev   MariaDB (MySQL) support
+ * libjansson-dev   ...is then required as well
+
 
 Then:
 
