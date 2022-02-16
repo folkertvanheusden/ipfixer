@@ -16,6 +16,7 @@ add_executable(ipfixer
 	buffer.cpp
 	db.cpp
 	db-mongodb.cpp
+	db-postgres.cpp
 	error.cpp
 	ipfix.cpp
 	logging.cpp
@@ -33,6 +34,7 @@ find_package(Threads)
 target_link_libraries(ipfixer Threads::Threads)
 
 configure_file(config.h.in config.h)
+target_include_directories(ipfixer PUBLIC "${PROJECT_BINARY_DIR}")
 
 include(FindPkgConfig)
 
@@ -46,12 +48,16 @@ target_link_libraries(ipfixer ${YAML_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${YAML_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${YAML_CFLAGS_OTHER})
 
+pkg_check_modules(POSTGRES libpqxx)
+target_link_libraries(ipfixer ${POSTGRES_LIBRARIES})
+target_include_directories(ipfixer PUBLIC ${POSTGRES_INCLUDE_DIRS})
+target_compile_options(ipfixer PUBLIC ${POSTGRES_CFLAGS_OTHER})
+
 pkg_check_modules(JANSSON jansson)
 target_link_libraries(ipfixer ${JANSSON_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${JANSSON_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${JANSSON_CFLAGS_OTHER})
 
-pkg_check_modules(MARIADB mariadb)
 target_link_libraries(ipfixer ${MARIADB_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${MARIADB_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${MARIADB_CFLAGS_OTHER})
