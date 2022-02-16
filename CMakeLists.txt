@@ -45,3 +45,13 @@ pkg_check_modules(YAML REQUIRED yaml-cpp)
 target_link_libraries(ipfixer ${YAML_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${YAML_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${YAML_CFLAGS_OTHER})
+
+pkg_check_modules(JANSSON jansson)
+target_link_libraries(ipfixer ${JANSSON_LIBRARIES})
+target_include_directories(ipfixer PUBLIC ${JANSSON_INCLUDE_DIRS})
+target_compile_options(ipfixer PUBLIC ${JANSSON_CFLAGS_OTHER})
+
+pkg_check_modules(MARIADB mariadb)
+target_link_libraries(ipfixer ${MARIADB_LIBRARIES})
+target_include_directories(ipfixer PUBLIC ${MARIADB_INCLUDE_DIRS})
+target_compile_options(ipfixer PUBLIC ${MARIADB_CFLAGS_OTHER})
