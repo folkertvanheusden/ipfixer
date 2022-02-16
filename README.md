@@ -37,6 +37,10 @@ usage
 Invoke 'ipfixer'. It requires a configuration-file
 for which an example (ipfixer.yaml) is included.
 
+Note: if you get strange "out of range"-errors, make
+sure you correclty configured IPFIX or NetFlow
+depending on what the emitter is producing.
+
 
 Written by Folkert van Heusden <mail@vanheusden.com>
 

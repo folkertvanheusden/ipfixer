@@ -16,6 +16,7 @@ add_executable(ipfixer
 	buffer.cpp
 	db.cpp
 	db-mongodb.cpp
+	db-mysql.cpp
 	db-postgres.cpp
 	error.cpp
 	ipfix.cpp
@@ -55,6 +56,7 @@ target_link_libraries(ipfixer ${JANSSON_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${JANSSON_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${JANSSON_CFLAGS_OTHER})
 
+pkg_check_modules(MARIADB libmariadb)
 target_link_libraries(ipfixer ${MARIADB_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${MARIADB_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${MARIADB_CFLAGS_OTHER})

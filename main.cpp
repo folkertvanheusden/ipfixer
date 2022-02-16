@@ -14,6 +14,7 @@
 #include "config.h"
 #include "db.h"
 #include "db-mongodb.h"
+#include "db-mysql.h"
 #include "db-postgres.h"
 #include "error.h"
 #include "ipfix.h"
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
 
 		// select target
 		YAML::Node cfg_storage = config["storage"];
-		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to; 'mongodb' or 'postgres'");
+		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to; 'mariadb'/'mysql', 'mongodb' or 'postgres'");
 
 #if LIBMONGOCXX_FOUND == 1
 		if (storage_type == "mongodb") {
@@ -107,8 +108,20 @@ int main(int argc, char *argv[])
 
 			db = new db_postgres(connection_info);
 		}
+		else
 #endif
-		else {
+#if MARIADB_FOUND == 1
+		if (storage_type == "mariadb" || storage_type == "mysql") {
+			std::string host   = yaml_get_string(cfg_storage, "host", "MariaDB host to connect to");
+			std::string user   = yaml_get_string(cfg_storage, "user", "username to authenticate with");
+			std::string pass   = yaml_get_string(cfg_storage, "pass", "passwor to authenticate with");
+			std::string dbname = yaml_get_string(cfg_storage, "db",   "database to write to");
+
+			db = new db_mysql(host, user, pass, dbname);
+		}
+		else
+#endif
+		{
 			error_exit(false, "Database \"%s\" not supported/understood", storage_type.c_str());
 		}
 

@@ -1,8 +1,14 @@
+#include "config.h"
+#if MARIADB_FOUND == 1
+#if JANSSON_FOUND != 1
+#error libjansson is required for mariadb
+#endif
 #include <jansson.h>
 #include <mariadb/mysql.h>
 
 #include "db-mysql.h"
 #include "error.h"
+#include "ipfix.h"
 #include "logging.h"
 
 
@@ -30,6 +36,25 @@ db_mysql::db_mysql(const std::string & host, const std::string & user, const std
 
         if (mysql_real_connect(handle, host.c_str(), user.c_str(), password.c_str(), database.c_str(), 0, nullptr, 0) == 0)
 		error_exit(false, "db_mysql: failed to connect to MySQL database, season: %s", mysql_error(handle));
+
+	// IP addresses are stored in the miscellaneous json structure
+	// as they have multiple formats (IPv4 versus IPv6)
+	exec_query(handle,
+		"CREATE TABLE IF NOT EXISTS records("
+			"ts DATETIME NOT NULL,"
+			"protocolIdentifier TINYINT UNSIGNED NOT NULL,"
+			"sourceTransportPort SMALLINT UNSIGNED NOT NULL,"
+			"destinationTransportPort SMALLINT UNSIGNED NOT NULL,"
+			"ipClassOfService TINYINT UNSIGNED NOT NULL,"
+			"ingressInterface INTEGER UNSIGNED NOT NULL,"
+			"egressInterface INTEGER UNSIGNED NOT NULL,"
+			"octetDeltaCount BIGINT UNSIGNED NOT NULL,"
+			"packetDeltaCount BIGINT UNSIGNED NOT NULL,"
+			"flowEndSysUpTime INTEGER UNSIGNED NOT NULL,"
+			"flowStartSysUpTime INTEGER UNSIGNED NOT NULL,"
+			"tcpControlBits SMALLINT UNSIGNED NOT NULL,"
+			"miscellaneous JSON)"
+		);
 }
 
 db_mysql::~db_mysql()
@@ -38,143 +63,71 @@ db_mysql::~db_mysql()
 
 bool db_mysql::insert(const db_record_t & dr)
 {
-	doc.append(bsoncxx::builder::basic::kvp("export_time"          , bsoncxx::types::b_date(std::chrono::system_clock::from_time_t(dr.export_time))));
-	// 64bit because no 32 bit unsigned is understood by c++ mongo library:
-	doc.append(bsoncxx::builder::basic::kvp("sequence_number"      , int64_t(dr.sequence_number)));
-	doc.append(bsoncxx::builder::basic::kvp("observation_domain_id", int64_t(dr.observation_domain_id)));
+	try {
+		db_record_t work = dr;
 
-	bsoncxx::builder::basic::document sub_doc;
+		std::string protocolIdentifier   = pull_field_from_db_record_t(work, "protocolIdentifier", "0");
+		std::string sourceTransportPort  = pull_field_from_db_record_t(work, "sourceTransportPort", "0");
+		std::string destinationTransportPort  = pull_field_from_db_record_t(work, "destinationTransportPort", "0");
+		std::string ipClassOfService     = pull_field_from_db_record_t(work, "ipClassOfService", "0");
+		std::string ingressInterface     = pull_field_from_db_record_t(work, "ingressInterface", "0");
+		std::string egressInterface      = pull_field_from_db_record_t(work, "egressInterface", "0");
+		std::string octetDeltaCount      = pull_field_from_db_record_t(work, "octetDeltaCount", "0");
+		std::string packetDeltaCount     = pull_field_from_db_record_t(work, "packetDeltaCount", "0");
+		std::string flowEndSysUpTime     = pull_field_from_db_record_t(work, "flowEndSysUpTime", "0");
+		std::string flowStartSysUpTime   = pull_field_from_db_record_t(work, "flowStartSysUpTime", "0");
+		std::string tcpControlBits       = pull_field_from_db_record_t(work, "tcpControlBits", "0");
 
-	for(auto & element : dr.data) {
-		db_record_data_t element_data = element.second;
+		json_t *obj = json_object();
 
-		switch(element_data.dt) {
-			case dt_octetArray:
-			case dt_ipv4Address:
-			case dt_ipv6Address:
-			case dt_macAddress: {
-					const uint8_t *bytes = element_data.b.get_bytes(element_data.len);
+		for(auto & element : work.data) {
+			auto value = ipfix::data_to_str(element.second.dt, element.second.len, element.second.b);
 
-					bsoncxx::types::b_binary binary_data;
-					binary_data.size = element_data.len;
-					binary_data.bytes = bytes;
-
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, binary_data));
-				}
-				break;
-
-			case dt_unsigned8:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_byte()));
-				break;
-
-			case dt_unsigned16: {
-					uint16_t temp = get_variable_size_integer(element_data.b, element_data.len);
-
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, temp));
-				}
-				break;
-
-			case dt_unsigned32: {
-					uint32_t temp = get_variable_size_integer(element_data.b, element_data.len);
-
-					if (temp > 2147483647) 
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(temp)));
-					else
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int32_t(temp)));
-				}
-				break;
-
-			case dt_unsigned64: {
-					uint64_t temp = get_variable_size_integer(element_data.b, element_data.len);
-
-					// hope for the best! (will fail when value > 0x7fffffffffffffff)
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(temp)));
-				}
-				break;
-
-			case dt_signed8:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_byte()));
-				break;
-
-			case dt_signed16:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_net_short()));
-				break;
-
-			case dt_signed32:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int32_t(element_data.b.get_net_long())));
-				break;
-
-			case dt_signed64:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(element_data.b.get_net_long_long())));
-				break;
-
-			case dt_float32:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_net_float()));
-				break;
-
-			case dt_float64:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_net_double()));
-				break;
-
-			case dt_boolean: {
-					uint8_t v = element_data.b.get_byte();
-
-					if (v == 1)
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, true));
-					else if (v == 2)
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, false));
-					else
-						dolog(ll_warning, "db_mysql::insert: unexpected value %d found for type boolean, expected 1 or 2", v);
-				 }
-				break;
-
-			case dt_string:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_string(element_data.b.get_n_bytes_left())));
-				break;
-
-			case dt_dateTimeSeconds:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, bsoncxx::types::b_date(std::chrono::system_clock::from_time_t(element_data.b.get_net_long()))));
-				break;
-
-			case dt_dateTimeMilliseconds: {
-					std::chrono::milliseconds m(element_data.b.get_net_long_long());
-
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, bsoncxx::types::b_date(m)));
-				}
-				break;
-
-			case dt_dateTimeMicroseconds:
-			case dt_dateTimeNanoseconds:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(element_data.b.get_net_long_long())));
-				break;
-
-//			case dt_basicList:  TODO
-//			case dt_subTemplateList:  TODO
-//			case dt_subTemplateMultiList:  TODO
-			default:
-				dolog(ll_warning, "db_mysql::insert: data type %d not supported for MongoDB target", element_data.dt);
+			if (value.has_value() == false) {
+				dolog(ll_warning, "db_mariadb::insert: cannot convert \"%s\" (data-type %d) to string", element.first.c_str(), element.second.dt);
 
 				return false;
+			}
+
+			json_object_set(obj, element.first.c_str(), json_string(value.value().c_str()));
 		}
+
+		char *misc_str = json_dumps(obj, 0);
+
+		std::string miscellaneous = misc_str;
+
+		free(misc_str);
+
+		std::string query = std::string("INSERT INTO records") +
+				"(ts, protocolIdentifier, sourceTransportPort, destinationTransportPort, ipClassOfService, " +
+				"ingressInterface, egressInterface, octetDeltaCount, packetDeltaCount, flowEndSysUpTime, " +
+				"flowStartSysUpTime, tcpControlBits, miscellaneous) " +
+				"VALUES(" +
+					"NOW()," +
+					protocolIdentifier + "," +
+					sourceTransportPort + "," +
+					destinationTransportPort + "," +
+					ipClassOfService + "," +
+					ingressInterface + "," +
+					egressInterface + "," +
+					octetDeltaCount + "," +
+					packetDeltaCount + "," +
+					flowEndSysUpTime + "," +
+					flowStartSysUpTime + "," +
+					tcpControlBits + "," +
+					"'" + miscellaneous + "'" + 
+				")";
+
+		start_transaction(handle);
+		exec_query(handle, query);
+		commit_transaction(handle);
 	}
-
-	doc.append(bsoncxx::builder::basic::kvp("data", sub_doc));
-
-	bsoncxx::stdx::optional<mongocxx::result::insert_one> result = work_collection.insert_one(doc.view());
-
-	if (!result) {
-		dolog(ll_warning, "db_mysql::insert: no result for document insert returned");
-
-		return false;
-	}
-
-	int32_t inserted_count = result->result().inserted_count();
-
-	if (inserted_count != 1) {
-		dolog(ll_warning, "db_mysql::insert: unexpected (%d) inserted count (expected 1)", inserted_count);
+	catch(const std::string & s) {
+		dolog(ll_warning, "db_mariadb::insert: problem during record insertion: %s", s.c_str());
 
 		return false;
 	}
 
 	return true;
 }
+#endif
