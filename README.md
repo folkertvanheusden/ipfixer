@@ -2,8 +2,8 @@ what it is
 ----------
 
 ipfixer is a collector for IPFIX and NetFlow v9 data.
-This data is captured and then stored in e.g. a
-MondoDB database.
+This data is captured and then stored in a MongoDB or
+PostgreSQL database.
 
 
 compiling
@@ -19,8 +19,8 @@ Optional packages:
                     2022) this package is in Debian
                     in the 'experimental' branch)
 
- * libpqxx-dev      Postgres support
- * libjansson-dev   Required for Postgres
+ * libpqxx-dev      PostgreSQL support
+ * libjansson-dev   Required for PostgreSQL
 
 
 Then:
