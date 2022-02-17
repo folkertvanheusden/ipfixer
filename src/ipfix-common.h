@@ -1,5 +1,8 @@
 #pragma once
+#include <map>
+#include <optional>
 #include <stdint.h>
+#include <string>
 
 
 typedef struct
@@ -36,3 +39,20 @@ typedef enum {
 	dt_subTemplateList,
 	dt_subTemplateMultiList
 } data_type_t;
+
+class fields
+{
+private:
+	std::map<uint16_t, std::pair<std::string, data_type_t> > field_types;
+	std::map<std::string, data_type_t>                       field_data_types;
+
+public:
+	fields();
+	virtual ~fields();
+
+	std::optional<std::pair<std::string, data_type_t> > get_data(const uint16_t information_element_identifier);
+
+	std::optional<data_type_t>                          get_data_type(const std::string & field_name);
+};
+
+extern fields field_lookup;

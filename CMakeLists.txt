@@ -20,6 +20,7 @@ add_executable(ipfixer
 	src/db-postgres.cpp
 	src/error.cpp
 	src/ipfix.cpp
+	src/ipfix-common.cpp
 	src/logging.cpp
 	src/main.cpp
 	src/net.cpp

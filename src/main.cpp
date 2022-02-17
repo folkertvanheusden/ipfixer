@@ -93,6 +93,23 @@ int main(int argc, char *argv[])
 		YAML::Node cfg_storage = config["storage"];
 		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to; 'mariadb'/'mysql', 'mongodb' or 'postgres'");
 
+		// mappings from iana names to database field names
+		// also selects wether the target field is a json-blob
+		db_field_mappings_t dfm;
+
+		YAML::Node cfg_map = cfg_storage["map"];
+		for(YAML::const_iterator it = cfg_map.begin(); it != cfg_map.end(); it++) {
+			const YAML::Node node    = it->as<YAML::Node>();
+
+			std::string      iana    = yaml_get_string(node, "iana",    "original name of the field as registered at IANA");
+			std::string      host    = yaml_get_string(node, "field",   "name of field in the database");
+			bool             is_json = yaml_get_bool  (node, "is-json", "sets if the field is a json blob or not");
+
+			dfm.mappings.insert({ iana, { host, is_json } });
+		}
+
+		dfm.unmapped_fields     = yaml_get_string(cfg_storage, "unmapped-fields", "in what JSON blob to store unmapped fields, leave empty to skip");
+
 #if LIBMONGOCXX_FOUND == 1
 		if (storage_type == "mongodb") {
 			std::string mongodb_uri = yaml_get_string(cfg_storage, "uri", "MongoDB URI");
@@ -118,7 +135,7 @@ int main(int argc, char *argv[])
 			std::string pass   = yaml_get_string(cfg_storage, "pass", "passwor to authenticate with");
 			std::string dbname = yaml_get_string(cfg_storage, "db",   "database to write to");
 
-			db = new db_mysql(host, user, pass, dbname);
+			db = new db_mysql(host, user, pass, dbname, dfm);
 		}
 		else
 #endif

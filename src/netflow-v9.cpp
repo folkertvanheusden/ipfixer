@@ -111,32 +111,32 @@ bool netflow_v9::process_packet(const uint8_t *const packet, const int packet_si
 			db_record.observation_domain_id = source_id;
 
 			for(auto field : data_set->second) {
-				auto it = field_types.find(field.information_element_identifier);
+				auto element = field_lookup.get_data(field.information_element_identifier);
 
-				if (it == field_types.end()) {
+				if (element.has_value() == false) {
 					dolog(ll_warning, "process_netflow_v9_packet: information element identifier %d is not known", field.information_element_identifier);
 
 					return false;
 				}
 
 				// value, type of value (e.g. int, float, string), length of it
-				db_record_data_t drd { set.get_segment(field.field_length), it->second.second, field.field_length };
+				db_record_data_t drd { set.get_segment(field.field_length), element.value().second, field.field_length };
 
 				if (log_enabled(ll_debug)) {
 					buffer copy = drd.b;
 
-					std::optional<std::string> data = data_to_str(it->second.second, field.field_length, copy);
+					std::optional<std::string> data = data_to_str(element.value().second, field.field_length, copy);
 
 					if (data.has_value() == false) {
-						dolog(ll_debug, "process_netflow_v9_packet: information element %s of type %d: cannot convert, type not supported or invalid data", it->second.first.c_str(), it->second.second);
+						dolog(ll_debug, "process_netflow_v9_packet: information element %s of type %d: cannot convert, type not supported or invalid data", element.value().first.c_str(), element.value().second);
 
 						return false;
 					}
 
-					dolog(ll_debug, "process_netflow_v9_packet: information element %s of type %d: \"%s\"", it->second.first.c_str(), it->second.second, data.value().c_str());
+					dolog(ll_debug, "process_netflow_v9_packet: information element %s of type %d: \"%s\"", element.value().first.c_str(), element.value().second, data.value().c_str());
 				}
 
-				db_record.data.insert({ it->second.first, drd });
+				db_record.data.insert({ element.value().first, drd });
 			}
 
 			if (target)
