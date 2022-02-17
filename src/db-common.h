@@ -23,3 +23,15 @@ typedef struct
 	std::map<std::string, db_record_data_t> data;
 } db_record_t;
 
+typedef struct
+{
+	std::string target_name;
+	bool        target_is_json;
+} db_field_t;
+
+typedef struct
+{
+	std::map<std::string, db_field_t> mappings;
+
+	std::string unmapped_fields;
+} db_field_mappings_t;

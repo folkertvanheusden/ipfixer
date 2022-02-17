@@ -3,15 +3,56 @@
 #  uri: mongodb://localhost:27017
 #  db: testdb
 #  collection: testcol
-#storage:
-#  type: mysql
-#  host: localhost
-#  user: ipfix
-#  pass: ipfix
-#  db: ipfix
 storage:
-  type: postgres
-  connection-info: 'host=127.0.0.1 port=5434 dbname=ipfixpg user=ipfix password=ipfix'
+  type: mysql
+  host: localhost
+  user: ipfix
+  pass: ipfix
+  db: ipfix
+  map:
+# see https://www.iana.org/assignments/ipfix/ipfix.xhtml for
+# a list of field-names
+    - iana: sourceIPv4Address
+      field: source_address
+      is-json: true
+    - iana: sourceIPv6Address
+      field: source_address
+      is-json: true
+    - iana: destinationIPv4Address
+      field: destination_address
+      is-json: true
+    - iana: destinationIPv6Address
+      field: destination_address
+      is-json: true
+    - iana: protocolIdentifier
+      field: ip_protocol
+      is-json: false
+    - iana: ipVersion
+      field: ip_version
+      is-json: false
+    - iana: sourceTransportPort
+      field: src_port
+      is-json: false
+    - iana: destinationTransportPort
+      field: dst_port
+      is-json: false
+    - iana: flowStartSysUpTime
+      field: flow_start_time
+      is-json: false
+    - iana: flowEndSysUpTime
+      field: flow_end_time
+      is-json: false
+    - iana: octetDeltaCount
+      field: n_bytes
+      is-json: false
+    - iana: packetDeltaCount
+      field: n_packets
+      is-json: false
+# miscellaneous is a 'json-blob'
+  unmapped-fields: miscellaneous
+#storage:
+#  type: postgres
+#  connection-info: 'host=127.0.0.1 port=5434 dbname=ipfixpg user=ipfix password=ipfix'
 listen-port: 4739
 protocol: ipfix
 logging:

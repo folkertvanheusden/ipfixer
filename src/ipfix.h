@@ -15,8 +15,6 @@ class ipfix
 protected:
 	std::map<uint16_t, std::vector<information_element_t> > templates;
 
-	std::map<uint16_t, std::pair<std::string, data_type_t> > field_types;
-
 public:
 	ipfix();
 	virtual ~ipfix();
