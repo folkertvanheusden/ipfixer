@@ -1,4 +1,7 @@
 language: cpp
+
+dist: focal
+
 addons:
   apt:
     packages:
