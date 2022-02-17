@@ -16,5 +16,5 @@ listen-port: 4739
 protocol: ipfix
 logging:
   file: /var/log/ipfixer.log
-  loglevel-files: debug
-  loglevel-screen: debug
+  loglevel-files: info
+  loglevel-screen: info
