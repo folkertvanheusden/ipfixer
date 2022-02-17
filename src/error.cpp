@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 
-void error_exit(const bool se, const char *format, ...)
+[[ noreturn ]] void error_exit(const bool se, const char *format, ...)
 {
 	int e = errno;
 	va_list ap;
