@@ -1,4 +1,5 @@
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/folkertvanheusden/ipfixer.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/folkertvanheusden/ipfixer/context:cpp)
+![Coverity Scan](https://shields.api-test.nl:/coverity/scan/24517)
 
 
 what it is
