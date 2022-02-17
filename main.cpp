@@ -20,6 +20,7 @@
 #include "ipfix.h"
 #include "logging.h"
 #include "net.h"
+#include "netflow-v5.h"
 #include "netflow-v9.h"
 #include "yaml-helpers.h"
 
@@ -127,7 +128,7 @@ int main(int argc, char *argv[])
 
 		// port to listen on
 		int         listen_port = yaml_get_int   (config, "listen-port", "UDP port to listen on");
-		std::string protocol    = yaml_get_string(config, "protocol", "protocol to accept; \"ipfix\" or \"v9\" (=netflow)");
+		std::string protocol    = yaml_get_string(config, "protocol", "protocol to accept; \"ipfix\", \"v5\" or \"v9\" (v5/v9 are NetFlow)");
 
 		ipfix *i = nullptr;
 
@@ -135,6 +136,8 @@ int main(int argc, char *argv[])
 			i = new ipfix();
 		else if (protocol == "v9")
 			i = new netflow_v9();
+		else if (protocol == "v5")
+			i = new netflow_v5();
 		else
 			error_exit(false, "Protocol \"%s\" not supported/understood", protocol.c_str());
 
@@ -180,9 +183,9 @@ int main(int argc, char *argv[])
 
 		delete db;
 	}
-	catch(const std::out_of_range & e) {
-		dolog(ll_error, "main: 'out of range' exception (%s); internal error", e.what());
-	}
+//	catch(const std::out_of_range & e) {
+//		dolog(ll_error, "main: 'out of range' exception (%s); internal error", e.what());
+//	}
 	catch(const std::string & e) {
 		dolog(ll_error, "main: an error occured: \"%s\"", e.c_str());
 	}
