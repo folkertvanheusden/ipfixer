@@ -39,6 +39,9 @@ db_postgres::db_postgres(const std::string & connection_info)
 			"miscellaneous JSONB"
 		")");
 
+	work.exec(
+		"CREATE INDEX IF NOT EXISTS ts_index ON records(ts)");
+
 	work.commit();
 }
 
