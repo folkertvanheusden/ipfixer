@@ -20,3 +20,16 @@
 	miscellaneous->'ipVersion'
    ORDER BY
 	miscellaneous->'ipVersion';
+
+
+ * calculate amount of traffic (in bytes) per IP protocol (TCP, UDP, etc.):
+
+   SELECT
+	protocolidentifier,
+	ROUND(SUM(octetdeltacount) * 100.0 / (SELECT SUM(octetdeltacount) FROM records), 2)
+   FROM
+	records
+   GROUP BY
+	protocolidentifier
+   ORDER BY
+	protocolidentifier;
