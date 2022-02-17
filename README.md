@@ -5,8 +5,8 @@ what it is
 ----------
 
 ipfixer is a collector for IPFIX and NetFlow v9 data.
-This data is captured and then stored in a MongoDB or
-PostgreSQL database.
+This data is captured and then stored in a MongoDB,
+MariaDB/MySQL or PostgreSQL database.
 
 
 compiling
