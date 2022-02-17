@@ -1,12 +1,14 @@
  * calculate distribution of flow byte counts, over 25 bins:
 
    SELECT
-	ROUND(AVG(octetdeltacount), 2),
-	(COUNT(*) * 100) / (SELECT COUNT(*) FROM records) AS percentage
+	ROUND(AVG(octetdeltacount), 2) AS avg_bytes,
+	ROUND((COUNT(*) * 100.0) / (SELECT COUNT(*) FROM records), 3) AS percentage
    FROM
 	records
+   WHERE
+	octetdeltacount < 2147483647
    GROUP BY
-	ROUND(octetdeltacount * 25 / (SELECT MAX(octetdeltacount) FROM records));
+ 	ROUND(octetdeltacount * 25 / (SELECT MAX(octetdeltacount) FROM records where octetdeltacount < 2147483647));
 
 
  * calculate amount of traffic (in bytes) per IP version (IPv4, IPv6):
