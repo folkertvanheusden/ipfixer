@@ -1,3 +1,6 @@
+[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/folkertvanheusden/ipfixer.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/folkertvanheusden/ipfixer/context:cpp)
+
+
 what it is
 ----------
 
@@ -43,6 +46,13 @@ for which an example (ipfixer.yaml) is included.
 Note: if you get strange "out of range"-errors, make
 sure you correclty configured IPFIX or NetFlow
 depending on what the emitter is producing.
+
+
+tested with
+-----------
+
+* softflowd   - https://github.com/irino/softflowd
+* ipt_NETFLOW - https://github.com/aabc/ipt-netflow
 
 
 Written by Folkert van Heusden <mail@vanheusden.com>
