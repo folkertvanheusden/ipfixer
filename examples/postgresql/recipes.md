@@ -8,7 +8,9 @@
    WHERE
 	octetdeltacount < 2147483647
    GROUP BY
- 	ROUND(octetdeltacount * 25 / (SELECT MAX(octetdeltacount) FROM records where octetdeltacount < 2147483647));
+ 	ROUND(octetdeltacount * 25 / (SELECT MAX(octetdeltacount) FROM records where octetdeltacount < 2147483647))
+   ORDER BY
+	avg_bytes;
 
 
  * calculate amount of traffic (in bytes) per IP version (IPv4, IPv6):
