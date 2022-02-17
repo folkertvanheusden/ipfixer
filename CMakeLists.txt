@@ -13,21 +13,21 @@ set(CMAKE_BUILD_TYPE Debug)
 add_compile_options(-Wall -pedantic)
 
 add_executable(ipfixer
-	buffer.cpp
-	db.cpp
-	db-mongodb.cpp
-	db-mysql.cpp
-	db-postgres.cpp
-	error.cpp
-	ipfix.cpp
-	logging.cpp
-	main.cpp
-	net.cpp
-	netflow-v5.cpp
-	netflow-v9.cpp
-	str.cpp
-	time.cpp
-	yaml-helpers.cpp
+	src/buffer.cpp
+	src/db.cpp
+	src/db-mongodb.cpp
+	src/db-mysql.cpp
+	src/db-postgres.cpp
+	src/error.cpp
+	src/ipfix.cpp
+	src/logging.cpp
+	src/main.cpp
+	src/net.cpp
+	src/netflow-v5.cpp
+	src/netflow-v9.cpp
+	src/str.cpp
+	src/time.cpp
+	src/yaml-helpers.cpp
 	)
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -62,5 +62,5 @@ target_link_libraries(ipfixer ${MARIADB_LIBRARIES})
 target_include_directories(ipfixer PUBLIC ${MARIADB_INCLUDE_DIRS})
 target_compile_options(ipfixer PUBLIC ${MARIADB_CFLAGS_OTHER})
 
-configure_file(config.h.in config.h)
+configure_file(src/config.h.in config.h)
 target_include_directories(ipfixer PUBLIC "${PROJECT_BINARY_DIR}")
