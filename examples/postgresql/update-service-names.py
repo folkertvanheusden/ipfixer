@@ -36,7 +36,7 @@ for row in reader:
 
             map_[port] = name
 
-        except ValueError as e:
+        except ValueError:
             # most likely the csv header
             pass
 
