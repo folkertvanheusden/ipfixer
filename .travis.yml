@@ -1,0 +1,14 @@
+language: cpp
+addons:
+  apt:
+    packages:
+    - libmariadb-dev
+    - libyaml-cpp-dev
+    - libpqxx-dev
+    - libjansson-dev
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make

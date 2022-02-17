@@ -5,6 +5,7 @@ extraction:
         - libyaml-cpp-dev
         - libpqxx-dev
         - libjansson-dev
+        - libmariadb-dev
     configure:
       command:
         - mkdir _lgtm_build_dir
