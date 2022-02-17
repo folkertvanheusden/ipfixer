@@ -183,9 +183,9 @@ int main(int argc, char *argv[])
 
 		delete db;
 	}
-//	catch(const std::out_of_range & e) {
-//		dolog(ll_error, "main: 'out of range' exception (%s); internal error", e.what());
-//	}
+	catch(const std::out_of_range & e) {
+		dolog(ll_error, "main: 'out of range' exception (%s); internal error", e.what());
+	}
 	catch(const std::string & e) {
 		dolog(ll_error, "main: an error occured: \"%s\"", e.c_str());
 	}
