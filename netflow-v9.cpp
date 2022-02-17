@@ -23,6 +23,13 @@ bool netflow_v9::process_packet(const uint8_t *const packet, const int packet_si
 
 	// message header
 	uint16_t version_number  = b.get_net_short();
+
+	if (version_number != 9) {
+		dolog(ll_warning, "process_netflow_v9_packet: not a version 9 packet (%d instead)", version_number);
+
+		return false;
+	}
+
 	uint16_t length          = b.get_net_short();
 	uint32_t sysuptime       = b.get_net_long ();
 	time_t   export_time     = b.get_net_long ();

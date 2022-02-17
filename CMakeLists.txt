@@ -23,6 +23,7 @@ add_executable(ipfixer
 	logging.cpp
 	main.cpp
 	net.cpp
+	netflow-v5.cpp
 	netflow-v9.cpp
 	str.cpp
 	time.cpp
