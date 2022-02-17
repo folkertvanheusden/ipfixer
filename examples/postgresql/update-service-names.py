@@ -1,5 +1,7 @@
 #! /usr/bin/python3
 
+# required: psycopg2 (from pip)
+
 ## configure this ##
 db_connection_parameters = 'host=127.0.0.1 port=5434 dbname=ipfixer_eth1 user=ipfix password=ipfix'
 ####################

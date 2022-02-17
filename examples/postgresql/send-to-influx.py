@@ -1,5 +1,7 @@
 #! /usr/bin/python3
 
+# required: psycopg2 (from pip)
+
 ## configure this ##
 db_connection_parameters = 'host=127.0.0.1 port=5434 dbname=ipfixer_eth1 user=ipfix password=ipfix'
 
@@ -28,6 +30,13 @@ for row in cur:
     # print(now, row['destinationtransportport'], row['name'], row['n_bytes'])
 
     data = 'net.%s-%d %s %d\n' % (row['name'], row['destinationtransportport'], row['n_bytes'], now)
+    s.sendall(data.encode('ascii'))
+
+
+cur.execute("select miscellaneous->'ipVersion' as ipversion, sum(octetdeltacount) as n_bytes, count(*) as n from records where ts >= now() - interval '5 minutes' group by miscellaneous->'ipVersion' order by n desc limit 10")
+
+for row in cur:
+    data = 'net.ipv%s %s %d\n' % (row['ipversion'], row['n_bytes'], now)
     s.sendall(data.encode('ascii'))
 
 s.close()
