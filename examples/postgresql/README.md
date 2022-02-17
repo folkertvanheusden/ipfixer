@@ -7,3 +7,7 @@
 
   Collects the amount of bytes processed by the 10 most 'popular' flows in the last interval.
   These numbers are then send to Influx to be graphed by Grafana.
+
+* recipes.md
+
+  Example PostgreSQL queries
