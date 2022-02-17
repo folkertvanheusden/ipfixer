@@ -1,6 +1,8 @@
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/folkertvanheusden/ipfixer.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/folkertvanheusden/ipfixer/context:cpp)
 ![Coverity Scan](https://shields.api-test.nl:/coverity/scan/24517)
 [![Build Status](https://app.travis-ci.com/folkertvanheusden/ipfixer.svg?branch=master)](https://app.travis-ci.com/folkertvanheusden/ipfixer)
+[![Code Score](https://api.codiga.io/project/31370/score/svg)](https://www.codiga.io)
+[![Code Grade](https://api.codiga.io/project/31370/status/svg)](https://www.codiga.io)
 
 
 what it is
