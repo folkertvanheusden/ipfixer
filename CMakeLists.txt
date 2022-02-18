@@ -18,6 +18,7 @@ add_executable(ipfixer
 	src/db-mongodb.cpp
 	src/db-mysql.cpp
 	src/db-postgres.cpp
+	src/db-sql.cpp
 	src/error.cpp
 	src/ipfix.cpp
 	src/ipfix-common.cpp

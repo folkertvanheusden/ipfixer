@@ -2,10 +2,10 @@
 #if POSTGRES_FOUND == 1
 #include <pqxx/pqxx>
 
-#include "db.h"
+#include "db-sql.h"
 
 
-class db_postgres : public db
+class db_postgres : public db_sql
 {
 private:
 	const std::string  host;

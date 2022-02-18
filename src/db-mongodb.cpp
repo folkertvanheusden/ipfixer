@@ -27,27 +27,6 @@ db_mongodb::~db_mongodb()
 
 void db_mongodb::init_database()
 {
-	// no-op
-}
-
-std::string db_mongodb::data_type_to_db_type(const data_type_t dt)
-{
-	return nullptr;
-}
-
-std::string db_mongodb::escape_string(const std::string & in)
-{
-	return nullptr;
-}
-
-bool db_mongodb::execute_query(const std::string & q)
-{
-	return false;
-}
-
-bool db_mongodb::commit()
-{
-	return false;
 }
 
 bool db_mongodb::insert(const db_record_t & dr)

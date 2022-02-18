@@ -2,10 +2,10 @@
 #if MARIADB_FOUND == 1
 #include <mariadb/mysql.h>
 
-#include "db.h"
+#include "db-sql.h"
 
 
-class db_mysql : public db
+class db_mysql : public db_sql
 {
 private:
 	const std::string         host;

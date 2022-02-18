@@ -14,7 +14,7 @@
 #include "logging.h"
 
 
-db_mysql::db_mysql(const std::string & host, const std::string & user, const std::string & password, const std::string & database, const db_field_mappings_t & field_mappings) : db(field_mappings)
+db_mysql::db_mysql(const std::string & host, const std::string & user, const std::string & password, const std::string & database, const db_field_mappings_t & field_mappings) : db_sql(field_mappings)
 {
 	handle = mysql_init(nullptr);
 	if (!handle)

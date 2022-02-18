@@ -14,7 +14,7 @@
 #include "str.h"
 
 
-db_postgres::db_postgres(const std::string & connection_info, const db_field_mappings_t & field_mappings) : db(field_mappings)
+db_postgres::db_postgres(const std::string & connection_info, const db_field_mappings_t & field_mappings) : db_sql(field_mappings)
 {
 	connection = new pqxx::connection(connection_info);
 
