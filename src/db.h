@@ -10,13 +10,8 @@
 
 class db
 {
-protected:
-	const db_field_mappings_t  field_mappings;
-
-	std::optional<std::string> pull_field_from_db_record_t(db_record_t & data, const std::string & key);
-
 public:
-	db(const db_field_mappings_t & field_mappings);
+	db();
 	virtual ~db();
 
 	virtual void init_database() = 0;

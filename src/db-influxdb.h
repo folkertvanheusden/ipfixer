@@ -10,11 +10,13 @@ private:
 
 	std::string unescape(const db_record_t & dr, const std::string & name);
 
+	void        aggregate(db_aggregation_t & element);
+
 protected:
 	void init_database() override;
 
 public:
-	db_influxdb(const std::string & host, const int port, const db_field_mappings_t & field_mappings);
+	db_influxdb(const std::string & host, const int port, db_timeseries_aggregations_t & aggregations);
 	virtual ~db_influxdb();
 
 	bool insert(const db_record_t & dr) override;

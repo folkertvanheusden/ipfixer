@@ -4,7 +4,10 @@
 
 class db_timeseries : public db
 {
+protected:
+	db_timeseries_aggregations_t aggregations;
+
 public:
-	db_timeseries(const db_field_mappings_t & field_mappings);
+	db_timeseries(db_timeseries_aggregations_t & aggregations);
 	virtual ~db_timeseries();
 };

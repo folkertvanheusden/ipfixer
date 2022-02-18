@@ -1,12 +1,16 @@
 #pragma once
 #include <map>
+#include <mutex>
 #include <string>
 #include <stdint.h>
+#include <thread>
+#include <vector>
 
 #include "buffer.h"
 #include "ipfix-common.h"
 
 
+// (no-)SQL
 typedef struct
 {
 	buffer      b;
@@ -36,3 +40,26 @@ typedef struct
 
 	std::string unmapped_fields;
 } db_field_mappings_t;
+
+// time series
+
+typedef struct
+{
+	// thread that emits the samples every x seconds
+	std::thread                  *th;
+	int                           emit_interval;
+	std::string                   publish_topic;
+	std::string                   type;
+	std::vector<std::pair<std::string, std::string > > rules;
+
+	// measurements
+	std::mutex                   *lock;
+	uint64_t                      total;
+	uint64_t                      n_samples;
+} db_aggregation_t;
+
+typedef struct
+{
+	// first is field from ipfix/etc to aggregate
+	std::map<std::string, db_aggregation_t> aggregations;
+} db_timeseries_aggregations_t;
