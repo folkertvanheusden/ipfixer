@@ -62,6 +62,7 @@ that uses a lot of CPU.
 tested with
 -----------
 
+* EdgeMAX EdgeRouter Lite v1.10.0
 * softflowd   - https://github.com/irino/softflowd
 * ipt_NETFLOW - https://github.com/aabc/ipt-netflow
 
