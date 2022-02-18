@@ -89,6 +89,8 @@ bool db::insert(const db_record_t & dr)
 
 		std::map<std::string, json_t *> json_values;
 
+		// create list of fields, making sure they're unique (a json blob has one
+		// field-name!)
 		for(auto & mapping : field_mappings.mappings) {
 			if (json_values.find(mapping.second.target_name) == json_values.end()) {
 				query += ", " + mapping.second.target_name;
@@ -97,14 +99,17 @@ bool db::insert(const db_record_t & dr)
 			}
 		}
 
+		// any left-over fields can be optionally put in a json blob
 		if (field_mappings.unmapped_fields.empty() == false)
 			query += ", " + field_mappings.unmapped_fields;
 
+		// every records gets a timestamp
 		query += ") VALUES(NOW()";
 
 		// first collect all json-fields
 		for(auto & mapping : field_mappings.mappings) {
 			if (mapping.second.target_is_json) {
+				// get json object for this field
 				auto it = json_values.find(mapping.second.target_name);
 				if (it == json_values.end()) {
 					dolog(ll_info, "db::insert: json_values no longer has \"%s\"", mapping.second.target_name.c_str());
@@ -113,6 +118,7 @@ bool db::insert(const db_record_t & dr)
 					break;
 				}
 
+				// get ipfix data
 				std::string value;
 				auto temp = pull_field_from_db_record_t(work, mapping.first);
 				if (temp.has_value() == false) {
