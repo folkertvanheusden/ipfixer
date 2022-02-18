@@ -11,7 +11,7 @@ what it is
 ipfixer is a collector for IPFIX, NetFlow v9 and
 NetFlow v5 data.
 This data is captured and then stored in a MongoDB,
-MariaDB/MySQL or PostgreSQL database.
+MariaDB/MySQL, PostgreSQL or InfluxDB database.
 
 
 compiling
@@ -47,6 +47,9 @@ usage
 
 Invoke 'ipfixer'. It requires a configuration-file
 for which an example (ipfixer.yaml) is included.
+
+InfluxDB requires a host/port of a 'graphite
+endpoint'.
 
 Note: if you get strange "out of range"-errors, make
 sure you correclty configured IPFIX or NetFlow

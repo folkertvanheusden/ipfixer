@@ -13,6 +13,7 @@
 
 #include "config.h"
 #include "db.h"
+#include "db-influxdb.h"
 #include "db-mongodb.h"
 #include "db-mysql.h"
 #include "db-postgres.h"
@@ -91,7 +92,7 @@ int main(int argc, char *argv[])
 
 		// select target
 		YAML::Node cfg_storage = config["storage"];
-		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to; 'mariadb'/'mysql', 'mongodb' or 'postgres'");
+		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to: 'influxdb', 'mariadb'/'mysql', 'mongodb' or 'postgres'");
 
 		// mappings from iana names to database field names
 		// also selects wether the target field is a json-blob
@@ -139,6 +140,13 @@ int main(int argc, char *argv[])
 		}
 		else
 #endif
+		if (storage_type == "influxdb") {
+			std::string host   = yaml_get_string(cfg_storage, "host", "InfluxDB host to connect to");
+			int         port   = yaml_get_int   (cfg_storage, "port", "InfluxDB port to connect to");
+
+			db = new db_influxdb(host, port, dfm);
+		}
+		else
 		{
 			error_exit(false, "Database \"%s\" not supported/understood", storage_type.c_str());
 		}

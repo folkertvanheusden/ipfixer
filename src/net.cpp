@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <netdb.h>
 #include <string.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -62,4 +63,72 @@ uint64_t get_net_long_long(const uint8_t *const p)
 	}
 
 	return out;
+}
+
+int connect_to(const std::string & host, const int portnr)
+{
+	struct addrinfo hints = { 0 };
+	hints.ai_family    = AF_UNSPEC;   // Allow IPv4 or IPv6
+	hints.ai_socktype  = SOCK_STREAM;
+	hints.ai_flags     = AI_PASSIVE;  // For wildcard IP address
+	hints.ai_protocol  = 0;	          // Any protocol
+	hints.ai_canonname = nullptr;
+	hints.ai_addr      = nullptr;
+	hints.ai_next      = nullptr;
+
+	char portnr_str[8] = { 0 };
+	snprintf(portnr_str, sizeof portnr_str, "%d", portnr);
+
+	struct addrinfo *result = nullptr;
+	int rc = getaddrinfo(host.c_str(), portnr_str, &hints, &result);
+	if (rc != 0) {
+		dolog(ll_warning, "connect_to: problem resolving \"%s\": %s", host.c_str(), gai_strerror(rc));
+
+		return false;
+	}
+
+	for(struct addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
+		int fd = socket(rp -> ai_family, rp -> ai_socktype, rp -> ai_protocol);
+		if (fd == -1)
+			continue;  // TODO: log message?
+
+		if (connect(fd, rp -> ai_addr, rp -> ai_addrlen) == 0) {
+			freeaddrinfo(result);
+
+			return fd;
+		}
+
+		close(fd);
+	}
+
+	freeaddrinfo(result);
+
+	return -1;
+}
+
+ssize_t WRITE(int fd, const uint8_t *whereto, size_t len)
+{
+	ssize_t cnt=0;
+
+	while(len > 0) {
+		ssize_t rc = write(fd, whereto, len);
+
+		if (rc == -1) {
+			if (errno == EAGAIN) {
+				dolog(ll_warning, "WRITE: %s", strerror(errno));
+				continue;
+			}
+
+			return -1;
+		}
+		else if (rc == 0)
+			return -1;
+		else {
+			whereto += rc;
+			len -= rc;
+			cnt += rc;
+		}
+	}
+
+	return cnt;
 }
