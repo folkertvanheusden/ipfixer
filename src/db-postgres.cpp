@@ -54,9 +54,9 @@ std::string db_postgres::data_type_to_db_type(const data_type_t dt)
 	else if (dt == dt_unsigned8)
 		return "SMALLINT";
 	else if (dt == dt_unsigned16)
-		return "SMALLINT";
-	else if (dt == dt_unsigned32)
 		return "INT";
+	else if (dt == dt_unsigned32)
+		return "BIGINT";
 	else if (dt == dt_unsigned64)
 		return "BIGINT";
 	else if (dt == dt_signed8)
