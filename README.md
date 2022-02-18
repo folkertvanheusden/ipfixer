@@ -23,6 +23,8 @@ The following package is required:
 
  * libyaml-cpp-dev
 
+ * pkg-config       for cmake
+
 Optional packages:
 
  * libmongocxx-dev  at moment of writing (February
