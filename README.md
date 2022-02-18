@@ -19,6 +19,8 @@ compiling
 
 The following package is required:
 
+ * libjansson-dev
+
  * libyaml-cpp-dev
 
 Optional packages:
@@ -28,10 +30,8 @@ Optional packages:
                     in the 'experimental' branch)
 
  * libpqxx-dev      PostgreSQL support
- * libjansson-dev   Required for PostgreSQL
 
  * libmariadb-dev   MariaDB (MySQL) support
- * libjansson-dev   ...is then required as well
 
 
 Then:
