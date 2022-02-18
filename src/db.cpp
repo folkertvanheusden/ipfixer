@@ -59,17 +59,20 @@ void db::init_database()
 }
 
 // get & erase!
-std::string db::pull_field_from_db_record_t(db_record_t & data, const std::string & key, const std::string & default_)
+std::optional<std::string> db::pull_field_from_db_record_t(db_record_t & data, const std::string & key)
 {
 	auto it = data.data.find(key);
 
 	if (it == data.data.end())
-		return default_;
+		return { };
 
 	auto value = ipfix::data_to_str(it->second.dt, it->second.len, it->second.b);
 
-	if (value.has_value() == false)
-		throw myformat("pull_field_from_db_record_t: cannot convert \"%s\" (data-type %d) to string", key.c_str(), it->second.dt);
+	if (value.has_value() == false) {
+		dolog(ll_info, "pull_field_from_db_record_t: cannot convert \"%s\" (data-type %d) to string", key.c_str(), it->second.dt);
+
+		return { };
+	}
 
 	data.data.erase(it);
 
@@ -79,6 +82,7 @@ std::string db::pull_field_from_db_record_t(db_record_t & data, const std::strin
 bool db::insert(const db_record_t & dr)
 {
 	try {
+		bool        fail = false;
 		db_record_t work = dr;
 
 		std::string query = "INSERT INTO records(ts";
@@ -102,10 +106,22 @@ bool db::insert(const db_record_t & dr)
 		for(auto & mapping : field_mappings.mappings) {
 			if (mapping.second.target_is_json) {
 				auto it = json_values.find(mapping.second.target_name);
-				// TODO check if it valid
+				if (it == json_values.end()) {
+					dolog(ll_info, "db::insert: json_values no longer has \"%s\"", mapping.second.target_name.c_str());
 
-				auto value = pull_field_from_db_record_t(work, mapping.first, "0");
-				// TODO check if it valid
+					fail = true;
+					break;
+				}
+
+				std::string value;
+				auto temp = pull_field_from_db_record_t(work, mapping.first);
+				if (temp.has_value() == false) {
+					dolog(ll_info, "db::insert: data for \"%s\" missing (json)", mapping.first.c_str());
+					value = "0";
+				}
+				else {
+					value = temp.value();
+				}
 
 				// map IANA name in JSON-object to value
 				json_object_set(it->second, mapping.first.c_str(), json_string(value.c_str()));
@@ -124,7 +140,12 @@ bool db::insert(const db_record_t & dr)
 					json_fields.insert(mapping.second.target_name);
 
 					auto it = json_values.find(mapping.second.target_name);
-					// TODO check if it valid
+					if (it == json_values.end()) {
+						dolog(ll_info, "db::insert: json_values no longer has \"%s\"", mapping.second.target_name.c_str());
+
+						fail = true;
+						break;
+					}
 
 					char *misc_str = json_dumps(it->second, 0);
 
@@ -136,7 +157,14 @@ bool db::insert(const db_record_t & dr)
 				}
 			}
 			else {
-				value = pull_field_from_db_record_t(work, mapping.first, "0");
+				auto temp = pull_field_from_db_record_t(work, mapping.first);
+				if (temp.has_value() == false) {
+					dolog(ll_info, "db::insert: data for \"%s\" missing (non-json)", mapping.first.c_str());
+					value = "0";
+				}
+				else {
+					value = temp.value();
+				}
 
 				add = true;
 			}
@@ -147,15 +175,20 @@ bool db::insert(const db_record_t & dr)
 
 		// left-over fields
 		json_t *unmapped_fields = json_object();
-		if (field_mappings.unmapped_fields.empty() == false) {
+		if (field_mappings.unmapped_fields.empty() == false && !fail) {
 			// get
 			while(work.data.empty() == false) {
 				std::string field = work.data.begin()->first;
 
-				auto value = pull_field_from_db_record_t(work, field, "0");
-				// TODO check if it valid
+				auto value = pull_field_from_db_record_t(work, field);
+				if (value.has_value() == false) {
+					dolog(ll_info, "db::insert: data for \"%s\" missing (unmapped)", field.c_str());
 
-				json_object_set(unmapped_fields, field.c_str(), json_string(value.c_str()));
+					fail = true;
+					break;
+				}
+
+				json_object_set(unmapped_fields, field.c_str(), json_string(value.value().c_str()));
 			}
 
 			// add to query
@@ -170,8 +203,10 @@ bool db::insert(const db_record_t & dr)
 
 		query += ")";
 
-		execute_query(query);
-		commit();
+		if (!fail) {
+			execute_query(query);
+			commit();
+		}
 
 		for(auto element : json_values)
 			json_decref(element.second);
