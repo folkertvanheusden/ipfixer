@@ -25,6 +25,11 @@ db_mongodb::~db_mongodb()
 	delete m_c;
 }
 
+void db_mongodb::init_database()
+{
+	// no-op
+}
+
 std::string db_mongodb::data_type_to_db_type(const data_type_t dt)
 {
 	return nullptr;

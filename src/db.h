@@ -28,7 +28,7 @@ public:
 	db(const db_field_mappings_t & field_mappings);
 	virtual ~db();
 
-	void init_database();
+	virtual void init_database();
 
 	virtual bool insert(const db_record_t & dr);
 };
