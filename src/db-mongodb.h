@@ -8,9 +8,11 @@
 class db_mongodb : public db
 {
 private:
-	const std::string  database;
-	const std::string  collection;
-	mongocxx::client  *m_c  { nullptr };
+	const db_field_mappings_t  field_mappings;
+
+	const std::string          database;
+	const std::string          collection;
+	mongocxx::client          *m_c  { nullptr };
 
 public:
 	db_mongodb(const std::string & uri, const std::string & database, const std::string & collection, const db_field_mappings_t & field_mappings);

@@ -35,6 +35,68 @@ void sigh(int sig)
 	dolog(ll_info, "Terminating...");
 }
 
+db_field_mappings_t retrieve_mappings(const YAML::Node & cfg_storage)
+{
+	// mappings from iana names to database field names
+	// also selects wether the target field is a json-blob
+	db_field_mappings_t dfm;
+
+	YAML::Node cfg_map = cfg_storage["map"];
+	for(YAML::const_iterator it = cfg_map.begin(); it != cfg_map.end(); it++) {
+		const YAML::Node node    = it->as<YAML::Node>();
+
+		std::string      iana    = yaml_get_string(node, "iana",    "original name of the field as registered at IANA");
+		std::string      host    = yaml_get_string(node, "field",   "name of field in the database");
+		bool             is_json = yaml_get_bool  (node, "is-json", "sets if the field is a json blob or not");
+
+		dfm.mappings.insert({ iana, { host, is_json } });
+	}
+
+	dfm.unmapped_fields     = yaml_get_string(cfg_storage, "unmapped-fields", "in what JSON blob to store unmapped fields, leave empty to skip");
+
+	return dfm;
+}
+
+db_timeseries_aggregations_t retrieve_aggregations(const YAML::Node & cfg_storage)
+{
+	db_timeseries_aggregations_t dta;
+
+	// AGGREGATE octetDeltaCount FOR ingressInterface=0,ipVersion=6 TO nurdspace.edgerouter.ipv6 INTERVAL=60s
+
+	YAML::Node cfg_map = cfg_storage["aggregations"];
+	for(YAML::const_iterator it = cfg_map.begin(); it != cfg_map.end(); it++) {
+		const YAML::Node node    = it->as<YAML::Node>();
+
+		db_aggregation_t da;
+
+		std::string      aggregation_field = yaml_get_string(node, "field",    "field to aggregate");
+		int              emit_interval     = yaml_get_int   (node, "interval", "emit interval (in seconds)");
+		std::string      publish_topic     = yaml_get_string(node, "topic",    "topic to publish values under");
+		std::string      type              = yaml_get_string(node, "type",     "what to do with the value: sum, average or count");
+
+		if (type != "sum" && type != "average")
+			error_exit(false, "retrieve_aggregations: type \"%s\" not recognized", type.c_str());
+
+		da.emit_interval     = emit_interval;
+		da.publish_topic     = publish_topic;
+		da.type              = type;
+
+		YAML::Node       rules             = node["rules"];
+		for(YAML::const_iterator it = rules.begin(); it != rules.end(); it++) {
+			const YAML::Node rule_node = it->as<YAML::Node>();
+
+			std::string      match_key = yaml_get_string(rule_node, "match-key", "field to check");
+			std::string      match_val = yaml_get_string(rule_node, "match-val", "value to check for");
+
+			da.rules.push_back({ match_key, match_val });
+		}
+
+		dta.aggregations.insert({ aggregation_field, da });
+	}
+
+	return dta;
+}
+
 void help()
 {
 	printf("-c file  load configuration from 'file'\n");
@@ -94,28 +156,13 @@ int main(int argc, char *argv[])
 		YAML::Node cfg_storage = config["storage"];
 		std::string storage_type = yaml_get_string(cfg_storage, "type", "Database type to write to: 'influxdb', 'mariadb'/'mysql', 'mongodb' or 'postgres'");
 
-		// mappings from iana names to database field names
-		// also selects wether the target field is a json-blob
-		db_field_mappings_t dfm;
-
-		YAML::Node cfg_map = cfg_storage["map"];
-		for(YAML::const_iterator it = cfg_map.begin(); it != cfg_map.end(); it++) {
-			const YAML::Node node    = it->as<YAML::Node>();
-
-			std::string      iana    = yaml_get_string(node, "iana",    "original name of the field as registered at IANA");
-			std::string      host    = yaml_get_string(node, "field",   "name of field in the database");
-			bool             is_json = yaml_get_bool  (node, "is-json", "sets if the field is a json blob or not");
-
-			dfm.mappings.insert({ iana, { host, is_json } });
-		}
-
-		dfm.unmapped_fields     = yaml_get_string(cfg_storage, "unmapped-fields", "in what JSON blob to store unmapped fields, leave empty to skip");
-
 #if LIBMONGOCXX_FOUND == 1
 		if (storage_type == "mongodb") {
 			std::string mongodb_uri = yaml_get_string(cfg_storage, "uri", "MongoDB URI");
-			std::string mongodb_db = yaml_get_string(cfg_storage, "db", "MongoDB database to write to");
+			std::string mongodb_db  = yaml_get_string(cfg_storage, "db", "MongoDB database to write to");
 			std::string mongodb_collection = yaml_get_string(cfg_storage, "collection", "collection to write to");
+
+			db_field_mappings_t dfm = retrieve_mappings(cfg_storage);
 
 			db = new db_mongodb(mongodb_uri, mongodb_db, mongodb_collection, dfm);
 		}
@@ -123,7 +170,9 @@ int main(int argc, char *argv[])
 #endif
 #if POSTGRES_FOUND == 1
 		if (storage_type == "postgres") {
-			std::string connection_info = yaml_get_string(cfg_storage, "connection-info", "Postgres connection info string");
+			std::string         connection_info = yaml_get_string(cfg_storage, "connection-info", "Postgres connection info string");
+
+			db_field_mappings_t dfm = retrieve_mappings(cfg_storage);
 
 			db = new db_postgres(connection_info, dfm);
 		}
@@ -131,10 +180,12 @@ int main(int argc, char *argv[])
 #endif
 #if MARIADB_FOUND == 1
 		if (storage_type == "mariadb" || storage_type == "mysql") {
-			std::string host   = yaml_get_string(cfg_storage, "host", "MariaDB host to connect to");
-			std::string user   = yaml_get_string(cfg_storage, "user", "username to authenticate with");
-			std::string pass   = yaml_get_string(cfg_storage, "pass", "passwor to authenticate with");
-			std::string dbname = yaml_get_string(cfg_storage, "db",   "database to write to");
+			std::string         host   = yaml_get_string(cfg_storage, "host", "MariaDB host to connect to");
+			std::string         user   = yaml_get_string(cfg_storage, "user", "username to authenticate with");
+			std::string         pass   = yaml_get_string(cfg_storage, "pass", "passwor to authenticate with");
+			std::string         dbname = yaml_get_string(cfg_storage, "db",   "database to write to");
+
+			db_field_mappings_t dfm    = retrieve_mappings(cfg_storage);
 
 			db = new db_mysql(host, user, pass, dbname, dfm);
 		}
@@ -144,7 +195,9 @@ int main(int argc, char *argv[])
 			std::string host   = yaml_get_string(cfg_storage, "host", "InfluxDB host to connect to");
 			int         port   = yaml_get_int   (cfg_storage, "port", "InfluxDB port to connect to");
 
-			db = new db_influxdb(host, port, dfm);
+			db_timeseries_aggregations_t dta = retrieve_aggregations(cfg_storage);
+
+			db = new db_influxdb(host, port, dta);
 		}
 		else
 		{

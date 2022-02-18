@@ -24,6 +24,12 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size, d
 
 	// message header
 	uint16_t version_number        = b.get_net_short();
+	if (version_number != 10) {
+		dolog(ll_warning, "process_netflow_v5_packet: not a IPFIX packet (NetFlow v%d instead)", version_number);
+
+		return false;
+	}
+
 	uint16_t length                = b.get_net_short();
 	time_t   export_time           = b.get_net_long ();
 	uint32_t sequence_number       = b.get_net_long ();

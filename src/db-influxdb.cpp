@@ -10,10 +10,15 @@
 #include "str.h"
 
 
-db_influxdb::db_influxdb(const std::string & host, const int port, const db_field_mappings_t & field_mappings) :
-	db_timeseries(field_mappings),
+db_influxdb::db_influxdb(const std::string & host, const int port, db_timeseries_aggregations_t & aggregations) :
+	db_timeseries(aggregations),
 	host(host), port(port)
 {
+	for(auto & element : this->aggregations.aggregations) {
+		element.second.lock = new std::mutex();
+
+		element.second.th   = new std::thread([this, &element] { this->aggregate(element.second); });
+	}
 }
 
 db_influxdb::~db_influxdb()
@@ -24,118 +29,129 @@ void db_influxdb::init_database()
 {
 }
 
-std::string db_influxdb::unescape(const db_record_t & dr, const std::string & name)
+void db_influxdb::aggregate(db_aggregation_t & element)
 {
-	std::string work_str = name;
+        while(time(nullptr) % element.emit_interval)
+		sleep(1);
+
+	dolog(ll_info, "db_influxdb::aggregate: emit starting for %s", element.publish_topic.c_str());
 
 	for(;;) {
-		// curly bracket start
-		std::size_t cb_start = work_str.find('{');
-		if (cb_start == std::string::npos)
-			break;
+		time_t now = time(nullptr);
 
-		// curly bracket end
-		std::size_t cb_end = work_str.find('}');
-		if (cb_end == std::string::npos)
-			error_exit(false, "db_influxdb::unescape: \"%s\" is invalid, missing '}'", name.c_str());
+		std::unique_lock<std::mutex> lck(*element.lock);
 
-		std::string front      = work_str.substr(0, cb_start);
-		std::string back       = work_str.substr(cb_end + 1);
+		if (element.n_samples) {
+			std::string output;
 
-		std::string temp       = work_str.substr(cb_start + 1, cb_end - cb_start - 1);
-		std::size_t colon      = temp.find(':');
-		std::string escape_key;
-		std::string escape_val;
+			if (element.type == "average") {
+				uint64_t avg = element.total / element.n_samples;
 
-		if (colon != std::string::npos) {
-			escape_key = temp.substr(0, colon);
-			escape_val = temp.substr(colon + 1);
-		}
-		else {
-			escape_key = temp;
-		}
+				output = myformat("%s %ld %ld\n", element.publish_topic.c_str(), avg, now);
+			}
+			else if (element.type == "sum") { 
+				output = myformat("%s %ld %ld\n", element.publish_topic.c_str(), element.total, now);
+			}
+			else if (element.type == "count") { 
+				output = myformat("%s %ld %ld\n", element.publish_topic.c_str(), element.n_samples, now);
+			}
 
-		std::string result;
+			element.n_samples = element.total = 0;
 
-		if (escape_key == "my-hostname") {
-			struct utsname un { 0 };
+			lck.unlock();
+printf("%s\n", output.c_str());
 
-			if (uname(&un) == -1)
-				error_exit(true, "db_influxdb::unescape: \"utsname\" failed");
-
-			result = un.nodename;
-		}
-		else if (escape_key == "value") {
-			result = "_";  // default value in case of error
-
-			auto value_it = dr.data.find(escape_val);
-			if (value_it == dr.data.end())
-				dolog(ll_info, "db_influxdb::unescape: \"%s\"; key not found", escape_val.c_str());
+			int fd = connect_to(host, port);
+			if (fd == -1)
+				dolog(ll_info, "db_influxdb::insert: cannot connect to [%s]:%d", host.c_str(), port);
 			else {
-				buffer copy_b = value_it->second.b;
+				if (WRITE(fd, reinterpret_cast<const uint8_t *>(output.c_str()), output.size()) != ssize_t(output.size()))
+					dolog(ll_info, "db_influxdb::insert: cannot transmit to [%s]:%d", host.c_str(), port);
 
-				auto temp = ipfix::data_to_str(value_it->second.dt, value_it->second.len, copy_b);
-				if (temp.has_value() == false) 
-					dolog(ll_info, "db_influxdb::unescape: problem converting \"%s\"-data", escape_val.c_str());
-				else
-					result = temp.value();
+				close(fd);
 			}
 		}
 		else {
-			error_exit(false, "db_influxdb::unescape: \"%s\" is an unknown escape'", escape_key.c_str());
+			lck.unlock();
 		}
 
-		work_str = front + result + back;
-	}
+		if (now == time(nullptr))
+			sleep(1);
 
-	return work_str;
+	        while(time(nullptr) % element.emit_interval)
+			sleep(1);
+	}
 }
 
 bool db_influxdb::insert(const db_record_t & dr)
 {
-	time_t      now  = time(nullptr);
-
 	db_record_t work = dr;
 
-	int fd = connect_to(host, port);
-	if (fd == -1) {
-		dolog(ll_info, "db_influxdb::insert: cannot connect to [%s]:%d", host.c_str(), port);
-
-		return false;
-	}
-
-	std::string output;
-
-	for(auto & element : field_mappings.mappings) {
-		std::string org_name = element.first;
-		std::string new_name = element.second.target_name;
-
-		auto        it    = work.data.find(org_name);
-		if (it == work.data.end()) {
-			dolog(ll_debug, "db_influxdb::insert: field \"%s\" not in data set", org_name.c_str());
+	for(auto & element : work.data) {
+		// find aggregation (if any) by name of the flow-element
+		auto it = aggregations.aggregations.find(element.first);
+		if (it == aggregations.aggregations.end())
 			continue;
+
+		std::unique_lock lck(*it->second.lock);
+
+		// check the rules if any
+		bool use = true;
+
+		for(auto & rule : it->second.rules) {
+			// get field from work.data
+			auto field_it = work.data.find(rule.first);
+
+			// field not in set? then this rule doesn't
+			// match, abort
+			if (field_it == work.data.end()) {
+				use = false;
+				break;
+			}
+
+			// get the (processed) value of the field
+			auto value = ipfix::data_to_str(field_it->second.dt, field_it->second.len, field_it->second.b);
+
+			// can't process this field, abort rule(s)
+			if (value.has_value() == false) {
+				dolog(ll_info, "db_influxdb::insert: cannot retrieve value from field \"%s\"", rule.first.c_str());
+
+				use = false;
+				break;
+			}
+
+			// contents mismatch
+			if (value.value() != rule.second) {
+				use = false;
+				break;
+			}
 		}
 
-		std::string key   = unescape(work, new_name);
-		auto      & value = it->second;
+		if (use) {
+			// update record with sample value
+			if (element.second.dt == dt_unsigned8 ||
+			    element.second.dt == dt_unsigned16 ||
+			    element.second.dt == dt_unsigned32 ||
+			    element.second.dt == dt_unsigned64 ||
+			    element.second.dt == dt_signed8 ||
+			    element.second.dt == dt_signed16 ||
+			    element.second.dt == dt_signed32 ||
+			    element.second.dt == dt_signed64) {
+				auto value = ipfix::data_to_str(element.second.dt, element.second.len, element.second.b);
 
-		auto temp = ipfix::data_to_str(value.dt, value.len, value.b);
-		if (temp.has_value() == false) {
-			dolog(ll_info, "db_influxdb::insert: cannot retrieve value \"%s\"", element.first.c_str());
+				if (value.has_value() == true) {
+					it->second.total += std::atoll(value.value().c_str());
+					it->second.n_samples++;
+				}
+				else {
+					dolog(ll_info, "db_influxdb::insert: cannot retrieve value from field \"%s\"", element.first.c_str());
+				}
+			}
 
-			return false;
+			// TODO process other data-types
+			// e.g. update a timestamp to latest
 		}
-
-		output += myformat("%s %s %ld\n", key.c_str(), temp.value().c_str(), now);
 	}
-
-	if (WRITE(fd, reinterpret_cast<const uint8_t *>(output.c_str()), output.size()) != ssize_t(output.size())) {
-		dolog(ll_info, "db_influxdb::insert: cannot transmit to [%s]:%d", host.c_str(), port);
-
-		return false;
-	}
-
-	close(fd);
 
 	return true;
 }

@@ -12,7 +12,7 @@
 mongocxx::instance instance { };
 
 db_mongodb::db_mongodb(const std::string & uri, const std::string & database, const std::string & collection, const db_field_mappings_t & field_mappings) :
-	db(field_mappings),
+	field_mappings(field_mappings),
 	database(database), collection(collection)
 {
 	mongocxx::uri m_uri(uri);

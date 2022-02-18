@@ -10,7 +10,7 @@
 #include "str.h"
 
 
-db_sql::db_sql(const db_field_mappings_t & field_mappings) : db(field_mappings)
+db_sql::db_sql(const db_field_mappings_t & field_mappings) : field_mappings(field_mappings)
 {
 }
 
@@ -56,6 +56,27 @@ void db_sql::init_database()
 	query += ")";
 
 	execute_query(query);
+}
+
+// get & erase!
+std::optional<std::string> db_sql::pull_field_from_db_record_t(db_record_t & data, const std::string & key)
+{
+	auto it = data.data.find(key);
+
+	if (it == data.data.end())
+		return { };
+
+	auto value = ipfix::data_to_str(it->second.dt, it->second.len, it->second.b);
+
+	if (value.has_value() == false) {
+		dolog(ll_info, "db_sql::pull_field_from_db_record_t: cannot convert \"%s\" (data-type %d) to string", key.c_str(), it->second.dt);
+
+		return { };
+	}
+
+	data.data.erase(it);
+
+	return value.value();
 }
 
 bool db_sql::insert(const db_record_t & dr)
