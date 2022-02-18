@@ -15,10 +15,12 @@ add_compile_options(-Wall -pedantic)
 add_executable(ipfixer
 	src/buffer.cpp
 	src/db.cpp
+	src/db-influxdb.cpp
 	src/db-mongodb.cpp
 	src/db-mysql.cpp
 	src/db-postgres.cpp
 	src/db-sql.cpp
+	src/db-timeseries.cpp
 	src/error.cpp
 	src/ipfix.cpp
 	src/ipfix-common.cpp
