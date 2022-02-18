@@ -75,6 +75,7 @@ storage:
 #      field: per_IP_version.{my-hostname}.IPv{value:ipVersion}
 #      # 'is-json' is ignored for InfluxDB
 #      is-json: false
+#  unmapped-fields:
 
 listen-port: 4739
 
