@@ -79,6 +79,7 @@ storage:
 
 listen-port: 4739
 
+# ipfix / v5 / v9
 protocol: ipfix
 
 logging:
