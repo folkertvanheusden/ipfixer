@@ -14,10 +14,18 @@ private:
 	const std::string  database;
 	pqxx::connection  *connection { nullptr };
 
-public:
-	db_postgres(const std::string & connection_info);
-	virtual ~db_postgres();
+protected:
+	std::string         timestamp_type { "TIMESTAMP" };
+	std::string         json_type      { "JSONB"     };
 
-	bool insert(const db_record_t & dr) override;
+	std::string data_type_to_db_type(const data_type_t dt) override;
+
+	std::string escape_string(const std::string & in) override;
+	bool        execute_query(const std::string & q) override;
+	bool        commit() override;
+
+public:
+	db_postgres(const std::string & connection_info, const db_field_mappings_t & field_mappings);
+	virtual ~db_postgres();
 };
 #endif

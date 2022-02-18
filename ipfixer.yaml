@@ -1,8 +1,3 @@
-#storage:
-#  type: mongodb
-#  uri: mongodb://localhost:27017
-#  db: testdb
-#  collection: testcol
 storage:
   type: mysql
   host: localhost
@@ -50,11 +45,23 @@ storage:
       is-json: false
 # miscellaneous is a 'json-blob'
   unmapped-fields: miscellaneous
+
 #storage:
 #  type: postgres
 #  connection-info: 'host=127.0.0.1 port=5434 dbname=ipfixpg user=ipfix password=ipfix'
+#  mappings can be applied for postgresql as well, see mysql
+#
+#storage:
+#  type: mongodb
+#  uri: mongodb://localhost:27017
+#  db: testdb
+#  collection: testcol
+#  mappings can be applied for mongodb as well, see mysql, all fields are json though
+
 listen-port: 4739
+
 protocol: ipfix
+
 logging:
   file: /var/log/ipfixer.log
   loglevel-files: info

@@ -11,7 +11,9 @@
 
 mongocxx::instance instance { };
 
-db_mongodb::db_mongodb(const std::string & uri, const std::string & database, const std::string & collection) : database(database), collection(collection)
+db_mongodb::db_mongodb(const std::string & uri, const std::string & database, const std::string & collection, const db_field_mappings_t & field_mappings) :
+	db(field_mappings),
+	database(database), collection(collection)
 {
 	mongocxx::uri m_uri(uri);
 
@@ -21,6 +23,26 @@ db_mongodb::db_mongodb(const std::string & uri, const std::string & database, co
 db_mongodb::~db_mongodb()
 {
 	delete m_c;
+}
+
+std::string db_mongodb::data_type_to_db_type(const data_type_t dt)
+{
+	return nullptr;
+}
+
+std::string db_mongodb::escape_string(const std::string & in)
+{
+	return nullptr;
+}
+
+bool db_mongodb::execute_query(const std::string & q)
+{
+	return false;
+}
+
+bool db_mongodb::commit()
+{
+	return false;
 }
 
 bool db_mongodb::insert(const db_record_t & dr)
@@ -41,6 +63,12 @@ bool db_mongodb::insert(const db_record_t & dr)
 	for(auto & element : dr.data) {
 		db_record_data_t element_data = element.second;
 
+		std::string key_name = element.first;
+
+		auto it = field_mappings.mappings.find(key_name);
+		if (it != field_mappings.mappings.end())
+			key_name = it->second.target_name;
+
 		switch(element_data.dt) {
 			case dt_octetArray:
 			case dt_ipv4Address:
@@ -52,18 +80,18 @@ bool db_mongodb::insert(const db_record_t & dr)
 					binary_data.size = element_data.len;
 					binary_data.bytes = bytes;
 
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, binary_data));
+					sub_doc.append(bsoncxx::builder::basic::kvp(key_name, binary_data));
 				}
 				break;
 
 			case dt_unsigned8:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_byte()));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, element_data.b.get_byte()));
 				break;
 
 			case dt_unsigned16: {
 					uint16_t temp = get_variable_size_integer(element_data.b, element_data.len);
 
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, temp));
+					sub_doc.append(bsoncxx::builder::basic::kvp(key_name, temp));
 				}
 				break;
 
@@ -71,9 +99,9 @@ bool db_mongodb::insert(const db_record_t & dr)
 					uint32_t temp = get_variable_size_integer(element_data.b, element_data.len);
 
 					if (temp > 2147483647) 
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(temp)));
+						sub_doc.append(bsoncxx::builder::basic::kvp(key_name, int64_t(temp)));
 					else
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int32_t(temp)));
+						sub_doc.append(bsoncxx::builder::basic::kvp(key_name, int32_t(temp)));
 				}
 				break;
 
@@ -81,64 +109,64 @@ bool db_mongodb::insert(const db_record_t & dr)
 					uint64_t temp = get_variable_size_integer(element_data.b, element_data.len);
 
 					// hope for the best! (will fail when value > 0x7fffffffffffffff)
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(temp)));
+					sub_doc.append(bsoncxx::builder::basic::kvp(key_name, int64_t(temp)));
 				}
 				break;
 
 			case dt_signed8:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_byte()));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, element_data.b.get_byte()));
 				break;
 
 			case dt_signed16:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_net_short()));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, element_data.b.get_net_short()));
 				break;
 
 			case dt_signed32:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int32_t(element_data.b.get_net_long())));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, int32_t(element_data.b.get_net_long())));
 				break;
 
 			case dt_signed64:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(element_data.b.get_net_long_long())));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, int64_t(element_data.b.get_net_long_long())));
 				break;
 
 			case dt_float32:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_net_float()));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, element_data.b.get_net_float()));
 				break;
 
 			case dt_float64:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_net_double()));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, element_data.b.get_net_double()));
 				break;
 
 			case dt_boolean: {
 					uint8_t v = element_data.b.get_byte();
 
 					if (v == 1)
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, true));
+						sub_doc.append(bsoncxx::builder::basic::kvp(key_name, true));
 					else if (v == 2)
-						sub_doc.append(bsoncxx::builder::basic::kvp(element.first, false));
+						sub_doc.append(bsoncxx::builder::basic::kvp(key_name, false));
 					else
 						dolog(ll_warning, "db_mongodb::insert: unexpected value %d found for type boolean, expected 1 or 2", v);
 				 }
 				break;
 
 			case dt_string:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, element_data.b.get_string(element_data.b.get_n_bytes_left())));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, element_data.b.get_string(element_data.b.get_n_bytes_left())));
 				break;
 
 			case dt_dateTimeSeconds:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, bsoncxx::types::b_date(std::chrono::system_clock::from_time_t(element_data.b.get_net_long()))));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, bsoncxx::types::b_date(std::chrono::system_clock::from_time_t(element_data.b.get_net_long()))));
 				break;
 
 			case dt_dateTimeMilliseconds: {
 					std::chrono::milliseconds m(element_data.b.get_net_long_long());
 
-					sub_doc.append(bsoncxx::builder::basic::kvp(element.first, bsoncxx::types::b_date(m)));
+					sub_doc.append(bsoncxx::builder::basic::kvp(key_name, bsoncxx::types::b_date(m)));
 				}
 				break;
 
 			case dt_dateTimeMicroseconds:
 			case dt_dateTimeNanoseconds:
-				sub_doc.append(bsoncxx::builder::basic::kvp(element.first, int64_t(element_data.b.get_net_long_long())));
+				sub_doc.append(bsoncxx::builder::basic::kvp(key_name, int64_t(element_data.b.get_net_long_long())));
 				break;
 
 //			case dt_basicList:  TODO

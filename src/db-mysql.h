@@ -12,13 +12,20 @@ private:
 	const std::string         user;
 	const std::string         password;
 	const std::string         database;
-	const db_field_mappings_t field_mappings;
 	MYSQL                    *handle;
+
+protected:
+	std::string         timestamp_type { "DATETIME" };
+	std::string         json_type      { "JSON"     };
+
+	std::string data_type_to_db_type(const data_type_t dt) override;
+
+	std::string escape_string(const std::string & in) override;
+	bool        execute_query(const std::string & q) override;
+	bool        commit() override;
 
 public:
 	db_mysql(const std::string & host, const std::string & user, const std::string & password, const std::string & database, const db_field_mappings_t & field_mappings);
 	virtual ~db_mysql();
-
-	bool insert(const db_record_t & dr) override;
 };
 #endif

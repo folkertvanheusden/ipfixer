@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 			std::string mongodb_db = yaml_get_string(cfg_storage, "db", "MongoDB database to write to");
 			std::string mongodb_collection = yaml_get_string(cfg_storage, "collection", "collection to write to");
 
-			db = new db_mongodb(mongodb_uri, mongodb_db, mongodb_collection);
+			db = new db_mongodb(mongodb_uri, mongodb_db, mongodb_collection, dfm);
 		}
 		else
 #endif
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 		if (storage_type == "postgres") {
 			std::string connection_info = yaml_get_string(cfg_storage, "connection-info", "Postgres connection info string");
 
-			db = new db_postgres(connection_info);
+			db = new db_postgres(connection_info, dfm);
 		}
 		else
 #endif
@@ -142,6 +142,8 @@ int main(int argc, char *argv[])
 		{
 			error_exit(false, "Database \"%s\" not supported/understood", storage_type.c_str());
 		}
+
+		db->init_database();
 
 		// port to listen on
 		int         listen_port = yaml_get_int   (config, "listen-port", "UDP port to listen on");
