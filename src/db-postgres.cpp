@@ -17,6 +17,9 @@
 db_postgres::db_postgres(const std::string & connection_info, const db_field_mappings_t & field_mappings) : db(field_mappings)
 {
 	connection = new pqxx::connection(connection_info);
+
+	timestamp_type = "TIMESTAMP";
+	json_type      = "JSONB";
 }
 
 db_postgres::~db_postgres()

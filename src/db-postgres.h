@@ -15,9 +15,6 @@ private:
 	pqxx::connection  *connection { nullptr };
 
 protected:
-	std::string         timestamp_type { "TIMESTAMP" };
-	std::string         json_type      { "JSONB"     };
-
 	std::string data_type_to_db_type(const data_type_t dt) override;
 
 	std::string escape_string(const std::string & in) override;

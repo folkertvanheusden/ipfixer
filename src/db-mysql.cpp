@@ -22,6 +22,9 @@ db_mysql::db_mysql(const std::string & host, const std::string & user, const std
 
         if (mysql_real_connect(handle, host.c_str(), user.c_str(), password.c_str(), database.c_str(), 0, nullptr, 0) == 0)
 		error_exit(false, "db_mysql: failed to connect to MySQL database, season: %s", mysql_error(handle));
+
+	timestamp_type = "DATETIME";
+	json_type      = "JSON";
 }
 
 std::string db_mysql::escape_string(const std::string & in)
