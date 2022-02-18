@@ -9,8 +9,6 @@
 class db_sql : public db
 {
 protected:
-	const db_field_mappings_t  field_mappings;
-
 	std::string                timestamp_type { "" };
 	std::string                json_type      { "" };
 
