@@ -54,13 +54,27 @@ storage:
 #  type: postgres
 #  connection-info: 'host=127.0.0.1 port=5434 dbname=ipfixpg user=ipfix password=ipfix'
 #  mappings can be applied for postgresql as well, see mysql
-#
+
 #storage:
 #  type: mongodb
 #  uri: mongodb://localhost:27017
 #  db: testdb
 #  collection: testcol
 #  mappings can be applied for mongodb as well, see mysql, all fields are json though
+
+#storage:
+#  type: influxdb
+#  host: 172.29.0.1
+#  port: 2012
+#  map:
+#    - iana: octetDeltaCount
+#      field: traffic.{my-hostname}.{value:ingressInterface}.{value:egressInterface}
+#      # 'is-json' is ignored for InfluxDB
+#      is-json: false
+#    - iana: octetDeltaCount
+#      field: per_IP_version.{my-hostname}.IPv{value:ipVersion}
+#      # 'is-json' is ignored for InfluxDB
+#      is-json: false
 
 listen-port: 4739
 
