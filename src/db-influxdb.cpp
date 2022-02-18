@@ -106,9 +106,18 @@ bool db_influxdb::insert(const db_record_t & dr)
 
 	std::string output;
 
-	for(auto & element : work.data) {
-		std::string key   = unescape(work, element.first);
-		auto      & value = element.second;
+	for(auto & element : field_mappings.mappings) {
+		std::string org_name = element.first;
+		std::string new_name = element.second.target_name;
+
+		auto        it    = work.data.find(org_name);
+		if (it == work.data.end()) {
+			dolog(ll_debug, "db_influxdb::insert: field \"%s\" not in data set", org_name.c_str());
+			continue;
+		}
+
+		std::string key   = unescape(work, new_name);
+		auto      & value = it->second;
 
 		auto temp = ipfix::data_to_str(value.dt, value.len, value.b);
 		if (temp.has_value() == false) {
