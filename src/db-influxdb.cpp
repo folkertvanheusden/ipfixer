@@ -15,9 +15,11 @@ db_influxdb::db_influxdb(const std::string & host, const int port, db_timeseries
 	host(host), port(port)
 {
 	for(auto & element : this->aggregations.aggregations) {
-		element.second.lock = new std::mutex();
+		element.second.lock      = new std::mutex();
+		element.second.total     = 0;
+		element.second.n_samples = 0;
 
-		element.second.th   = new std::thread([this, &element] { this->aggregate(element.second); });
+		element.second.th        = new std::thread([this, &element] { this->aggregate(element.second); });
 	}
 }
 
