@@ -5,6 +5,10 @@ storage:
   pass: ipfix
   db: ipfix
   map:
+# here you select which fields you want in the database (or
+# in the unmapped json-blob if you want). multiple fields
+# can be combined in a json-blob. 'iana' and 'field' can be
+# the same name
 # see https://www.iana.org/assignments/ipfix/ipfix.xhtml for
 # a list of field-names
     - iana: sourceIPv4Address
