@@ -55,6 +55,9 @@ Note: if you get strange "out of range"-errors, make
 sure you correclty configured IPFIX or NetFlow
 depending on what the emitter is producing.
 
+Note: you probably don't want "debug" log-level as
+that uses a lot of CPU.
+
 
 tested with
 -----------
