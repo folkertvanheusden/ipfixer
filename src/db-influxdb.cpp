@@ -59,7 +59,6 @@ void db_influxdb::aggregate(db_aggregation_t & element)
 			element.n_samples = element.total = 0;
 
 			lck.unlock();
-printf("%s\n", output.c_str());
 
 			int fd = connect_to(host, port);
 			if (fd == -1)
