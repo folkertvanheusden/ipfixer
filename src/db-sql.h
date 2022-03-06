@@ -28,5 +28,5 @@ public:
 
 	virtual void init_database() override;
 
-	virtual bool insert(const db_record_t & dr);
+	virtual bool insert(const db_record_t & dr) override;
 };
