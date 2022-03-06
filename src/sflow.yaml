@@ -2,7 +2,7 @@ storage:
   type: mongodb
   uri: mongodb://mauer:27017
   db: testdb
-  collection: testcolmap
+  collection: sflow001
   unmapped-fields: miscellaneous
 listen-port: 6343
 protocol: sflow

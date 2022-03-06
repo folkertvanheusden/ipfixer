@@ -149,6 +149,134 @@ bool sflow::process_counters_sample_udp(const uint32_t sequence_number, buffer &
 	return true;
 }
 
+bool sflow::process_counters_sample_tcp(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint32_t(&db_record, b, "tcpRtoAlgorithm");
+	add_to_db_record_uint32_t(&db_record, b, "tcpRtoMin");
+	add_to_db_record_uint32_t(&db_record, b, "tcpRtoMax");
+	add_to_db_record_uint32_t(&db_record, b, "tcpMaxConn");
+	add_to_db_record_uint32_t(&db_record, b, "tcpActiveOpens");
+	add_to_db_record_uint32_t(&db_record, b, "tcpPassiveOpens");
+	add_to_db_record_uint32_t(&db_record, b, "tcpAttemptFails");
+	add_to_db_record_uint32_t(&db_record, b, "tcpEstabResets");
+	add_to_db_record_uint32_t(&db_record, b, "tcpCurrEstab");
+	add_to_db_record_uint32_t(&db_record, b, "tcpInSegs");
+	add_to_db_record_uint32_t(&db_record, b, "tcpOutSegs");
+	add_to_db_record_uint32_t(&db_record, b, "tcpRetransSegs");
+	add_to_db_record_uint32_t(&db_record, b, "tcpInErrs");
+	add_to_db_record_uint32_t(&db_record, b, "tcpOutRsts");
+	add_to_db_record_uint32_t(&db_record, b, "tcpInCsumErrors");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_tcp: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_tcp: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
+bool sflow::process_counters_sample_icmp(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint32_t(&db_record, b, "icmpInMsgs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInErrors");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInDestUnreachs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInTimeExcds");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInParamProbs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInSrcQuenchs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInRedirects");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInEchos");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInEchoReps");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInTimestamps");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInAddrMasks");
+	add_to_db_record_uint32_t(&db_record, b, "icmpInAddrMaskReps");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutMsgs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutErrors");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutDestUnreachs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutTimeExcds");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutParamProbs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutSrcQuenchs");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutRedirects");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutEchos");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutEchoReps");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutTimestamps");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutTimestampReps");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutAddrMasks");
+	add_to_db_record_uint32_t(&db_record, b, "icmpOutAddrMaskReps");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_icmp: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_icmp: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
+bool sflow::process_counters_sample_ip(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint32_t(&db_record, b, "ipForwarding");
+	add_to_db_record_uint32_t(&db_record, b, "ipDefaultTTL");
+	add_to_db_record_uint32_t(&db_record, b, "ipInReceives");
+	add_to_db_record_uint32_t(&db_record, b, "ipInHdrErrors");
+	add_to_db_record_uint32_t(&db_record, b, "ipInAddrErrors");
+	add_to_db_record_uint32_t(&db_record, b, "ipForwDatagrams");
+	add_to_db_record_uint32_t(&db_record, b, "ipInUnknownProtos");
+	add_to_db_record_uint32_t(&db_record, b, "ipInDiscards");
+	add_to_db_record_uint32_t(&db_record, b, "ipInDelivers");
+	add_to_db_record_uint32_t(&db_record, b, "ipOutRequests");
+	add_to_db_record_uint32_t(&db_record, b, "ipOutDiscards");
+	add_to_db_record_uint32_t(&db_record, b, "ipOutNoRoutes");
+	add_to_db_record_uint32_t(&db_record, b, "ipReasmTimeout");
+	add_to_db_record_uint32_t(&db_record, b, "ipReasmReqds");
+	add_to_db_record_uint32_t(&db_record, b, "ipReasmOKs");
+	add_to_db_record_uint32_t(&db_record, b, "ipReasmFails");
+	add_to_db_record_uint32_t(&db_record, b, "ipFragOKs");
+	add_to_db_record_uint32_t(&db_record, b, "ipFragFails");
+	add_to_db_record_uint32_t(&db_record, b, "ipFragCreates");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_ip: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_ip: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
 bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *const target)
 {
 	uint32_t sequence_number    = b.get_net_long();
@@ -201,6 +329,27 @@ bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *cons
 		else if (record_type == SFLCOUNTERS_HOST_UDP) {
 			if (process_counters_sample_udp(sequence_number, record, target) == false) {
 				dolog(ll_warning, "sflow::process_counters_sample: failed to process UDP counters record");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_HOST_TCP) {
+			if (process_counters_sample_tcp(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process TCP counters record");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_HOST_ICMP) {
+			if (process_counters_sample_icmp(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process ICMP counters record");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_HOST_IP) {
+			if (process_counters_sample_ip(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process IP counters record");
 
 				return false;
 			}
