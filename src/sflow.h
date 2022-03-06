@@ -12,6 +12,8 @@ protected:
 	bool process_counters_sample_tcp(const uint32_t sequence_number, buffer & b, db *const target);
 	bool process_counters_sample_icmp(const uint32_t sequence_number, buffer & b, db *const target);
 	bool process_counters_sample_ip(const uint32_t sequence_number, buffer & b, db *const target);
+	bool process_counters_sample_host_dsk(const uint32_t sequence_number, buffer & b, db *const target);
+	bool process_counters_sample_host_mem(const uint32_t sequence_number, buffer & b, db *const target);
 	bool process_counters_sample(buffer & record, const bool is_expanded, db *const target);
 
 public:

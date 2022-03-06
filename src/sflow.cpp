@@ -277,6 +277,72 @@ bool sflow::process_counters_sample_ip(const uint32_t sequence_number, buffer & 
 	return true;
 }
 
+bool sflow::process_counters_sample_host_dsk(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint64_t(&db_record, b, "disk_total");
+	add_to_db_record_uint64_t(&db_record, b, "disk_free");
+	add_to_db_record_uint32_t(&db_record, b, "disk_partition_max_used");  // 100th of a percentage
+	add_to_db_record_uint32_t(&db_record, b, "disk_reads");
+	add_to_db_record_uint64_t(&db_record, b, "disk_bytes_read");
+	add_to_db_record_uint32_t(&db_record, b, "disk_read_time");
+	add_to_db_record_uint32_t(&db_record, b, "disk_writes");
+	add_to_db_record_uint64_t(&db_record, b, "disk_bytes_written");
+	add_to_db_record_uint32_t(&db_record, b, "disk_write_time");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_dsk: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_dsk: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
+bool sflow::process_counters_sample_host_mem(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint64_t(&db_record, b, "mem_total");
+	add_to_db_record_uint64_t(&db_record, b, "mem_free");
+	add_to_db_record_uint64_t(&db_record, b, "mem_shared");
+	add_to_db_record_uint64_t(&db_record, b, "mem_buffers");
+	add_to_db_record_uint64_t(&db_record, b, "mem_cached");
+	add_to_db_record_uint64_t(&db_record, b, "swap_total");
+	add_to_db_record_uint64_t(&db_record, b, "swap_free");
+	add_to_db_record_uint32_t(&db_record, b, "page_in");
+	add_to_db_record_uint32_t(&db_record, b, "page_out");
+	add_to_db_record_uint32_t(&db_record, b, "swap_in");
+	add_to_db_record_uint32_t(&db_record, b, "swap_out");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_mem: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_mem: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
 bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *const target)
 {
 	uint32_t sequence_number    = b.get_net_long();
@@ -350,6 +416,20 @@ bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *cons
 		else if (record_type == SFLCOUNTERS_HOST_IP) {
 			if (process_counters_sample_ip(sequence_number, record, target) == false) {
 				dolog(ll_warning, "sflow::process_counters_sample: failed to process IP counters record");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_HOST_DSK) {
+			if (process_counters_sample_host_dsk(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process host-disk counters record");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_HOST_MEM) {
+			if (process_counters_sample_host_mem(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process host-mem counters record");
 
 				return false;
 			}
