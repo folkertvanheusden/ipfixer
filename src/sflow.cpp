@@ -13,17 +13,17 @@
 
 std::optional<std::string> get_SFLAddress(buffer & b)
 {
-	uint32_t address_type = b.get_net_long();
+       uint32_t address_type = b.get_net_long();
 
-	if (address_type == SFLADDRESSTYPE_IP_V4) {
-		uint32_t addr = b.get_net_long();
+       if (address_type == SFLADDRESSTYPE_IP_V4) {
+               uint32_t addr = b.get_net_long();
 
-		return myformat("%d.%d.%d.%d", (addr >> 24) & 255, (addr >> 16) & 255, (addr >> 8) & 255, addr & 255);
-	}
+               return myformat("%d.%d.%d.%d", (addr >> 24) & 255, (addr >> 16) & 255, (addr >> 8) & 255, addr & 255);
+       }
 
-	dolog(ll_warning, "SFLAddress_to_string: address type %u is not supported", address_type);
+       dolog(ll_warning, "SFLAddress_to_string: address type %u is not supported", address_type);
 
-	return { };
+       return { };
 }
 
 sflow::sflow()
@@ -48,11 +48,11 @@ void sflow::add_to_db_record_uint64_t(db_record_t *const record, buffer & b, con
 	record->data.insert({ name, data_record });
 }
 
-bool sflow::process_counters_sample_generic(buffer & b, db *const target)
+bool sflow::process_counters_sample_generic(const uint32_t sequence_number, buffer & b, db *const target)
 {
 	db_record_t db_record;
 	db_record.export_time           = time(nullptr);  // not in sflow data
-	db_record.sequence_number       = b.get_net_long();
+	db_record.sequence_number       = sequence_number;
 	db_record.observation_domain_id = 0;
 	
 	add_to_db_record_uint32_t(&db_record, b, "ifIndex");
@@ -83,6 +83,65 @@ bool sflow::process_counters_sample_generic(buffer & b, db *const target)
 
 	if (target->insert(db_record) == false) {
                 dolog(ll_warning, "sflow::process_counters_sample_generic: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
+bool sflow::process_counters_sample_adaptors(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	uint32_t num_adaptors = b.get_net_long();
+
+	dolog(ll_debug, "sflow::process_counters_sample_adaptors: number of adaptors: %u", num_adaptors);
+
+	for(uint32_t i=0; i<num_adaptors; i++) {
+		uint32_t ifIndex  = b.get_net_long();
+
+		uint32_t num_macs = b.get_net_long();
+
+		for(uint32_t m=0; m<num_macs; m++) {
+			buffer mac = b.get_segment(8);  // 8!
+
+			dolog(ll_debug, "sflow::process_counters_sample_adaptors: interface %u (%u/%u), mac (%u/%u): %02x:%02x:%02x:%02x:%02x:%02x", ifIndex, i + 1, num_adaptors, m + 1, num_macs, mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte());
+
+			// TODO
+		}
+	}
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_adaptors: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	return true;
+}
+
+bool sflow::process_counters_sample_udp(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint32_t(&db_record, b, "udpInDatagrams");
+	add_to_db_record_uint32_t(&db_record, b, "udpNoPorts");
+	add_to_db_record_uint32_t(&db_record, b, "udpInErrors");
+	add_to_db_record_uint32_t(&db_record, b, "udpOutDatagrams");
+	add_to_db_record_uint32_t(&db_record, b, "udpRcvbufErrors");
+	add_to_db_record_uint32_t(&db_record, b, "udpSndbufErrors");
+	add_to_db_record_uint32_t(&db_record, b, "udpInCsumErrors");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_udp: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_udp: failed inserting record into database");
 
 		return false;
 	}
@@ -126,8 +185,22 @@ bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *cons
 		buffer record = b.get_segment(record_length);
 
 		if (record_type == SFLCOUNTERS_GENERIC) {
-			if (process_counters_sample_generic(record, target) == false) {
+			if (process_counters_sample_generic(sequence_number, record, target) == false) {
 				dolog(ll_warning, "sflow::process_counters_sample: failed to process generic counters record");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_ADAPTORS) {
+			if (process_counters_sample_adaptors(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process adaptors counters record");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_HOST_UDP) {
+			if (process_counters_sample_udp(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process UDP counters record");
 
 				return false;
 			}
