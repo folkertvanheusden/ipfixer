@@ -5,10 +5,6 @@
 #include "logging.h"
 #include "sflow.h"
 #include "str.h"
-// Only for enums: they're specifying SFLAddress_value as a
-// union, yet its size depends on the type. Their own code
-// also "manually" retrieves values from the datagrams.
-#include "inmon/sflow.h"
 
 
 std::optional<std::string> get_SFLAddress(buffer & b)
@@ -28,6 +24,53 @@ std::optional<std::string> get_SFLAddress(buffer & b)
 
 sflow::sflow()
 {
+	sflcounters_jump_table.insert({ SFLCOUNTERS_GENERIC,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_generic(sequence_number, b, target);
+				},
+			"generic" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_ADAPTORS,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_adaptors(sequence_number, b, target);
+				},
+			"adaptors" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_UDP,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_udp(sequence_number, b, target);
+				},
+			"UDP" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_TCP,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_tcp(sequence_number, b, target);
+				},
+			"UDP" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_ICMP,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_icmp(sequence_number, b, target);
+				},
+			"ICMP" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_IP,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_ip(sequence_number, b, target);
+				},
+			"IP" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_DSK,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_host_dsk(sequence_number, b, target);
+				},
+			"DSK" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_MEM,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_host_mem(sequence_number, b, target);
+				},
+			"MEM" } });
 }
 
 sflow::~sflow()
@@ -378,58 +421,13 @@ bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *cons
 
 		buffer record = b.get_segment(record_length);
 
-		if (record_type == SFLCOUNTERS_GENERIC) {
-			if (process_counters_sample_generic(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process generic counters record");
+		auto it = sflcounters_jump_table.find(SFLCounters_type_tag(record_type));
 
-				return false;
-			}
-		}
-		else if (record_type == SFLCOUNTERS_ADAPTORS) {
-			if (process_counters_sample_adaptors(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process adaptors counters record");
+		if (it != sflcounters_jump_table.end()) {
+			dolog(ll_warning, "sflow::process_counters_sample: invoke processor for \"%s\" counters (record type %u)", it->second.second.c_str(), record_type);
 
-				return false;
-			}
-		}
-		else if (record_type == SFLCOUNTERS_HOST_UDP) {
-			if (process_counters_sample_udp(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process UDP counters record");
-
-				return false;
-			}
-		}
-		else if (record_type == SFLCOUNTERS_HOST_TCP) {
-			if (process_counters_sample_tcp(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process TCP counters record");
-
-				return false;
-			}
-		}
-		else if (record_type == SFLCOUNTERS_HOST_ICMP) {
-			if (process_counters_sample_icmp(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process ICMP counters record");
-
-				return false;
-			}
-		}
-		else if (record_type == SFLCOUNTERS_HOST_IP) {
-			if (process_counters_sample_ip(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process IP counters record");
-
-				return false;
-			}
-		}
-		else if (record_type == SFLCOUNTERS_HOST_DSK) {
-			if (process_counters_sample_host_dsk(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process host-disk counters record");
-
-				return false;
-			}
-		}
-		else if (record_type == SFLCOUNTERS_HOST_MEM) {
-			if (process_counters_sample_host_mem(sequence_number, record, target) == false) {
-				dolog(ll_warning, "sflow::process_counters_sample: failed to process host-mem counters record");
+			if (it->second.first(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_counters_sample: failed to process \"%s\" counters (record type %u)", it->second.second.c_str(), record_type);
 
 				return false;
 			}
