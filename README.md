@@ -8,8 +8,8 @@
 what it is
 ----------
 
-ipfixer is a collector for IPFIX, NetFlow v9 and
-NetFlow v5 data.
+ipfixer is a collector for IPFIX, NetFlow v9, NetFlow
+v5 and (a subset of) SFlow data.
 This data is captured and then stored in a MongoDB,
 MariaDB/MySQL, PostgreSQL or InfluxDB database.
 
@@ -67,6 +67,7 @@ tested with
 * EdgeMAX EdgeRouter Lite v1.10.0
 * softflowd   - https://github.com/irino/softflowd
 * ipt_NETFLOW - https://github.com/aabc/ipt-netflow
+* host-sflow  - https://github.com/sflow/host-sflow
 
 
 Written by Folkert van Heusden <mail@vanheusden.com>
