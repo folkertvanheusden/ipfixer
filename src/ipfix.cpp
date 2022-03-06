@@ -25,7 +25,7 @@ bool ipfix::process_packet(const uint8_t *const packet, const int packet_size, d
 	// message header
 	uint16_t version_number        = b.get_net_short();
 	if (version_number != 10) {
-		dolog(ll_warning, "process_netflow_v5_packet: not a IPFIX packet (NetFlow v%d instead)", version_number);
+		dolog(ll_warning, "process_ipfix_packet: not an IPFIX packet (NetFlow/IPFIX v%d instead)", version_number);
 
 		return false;
 	}

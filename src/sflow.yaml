@@ -1,0 +1,12 @@
+storage:
+  type: mongodb
+  uri: mongodb://mauer:27017
+  db: testdb
+  collection: testcolmap
+  unmapped-fields: miscellaneous
+listen-port: 6343
+protocol: sflow
+logging:
+  file: /tmp/sflow.log
+  loglevel-files: debug
+  loglevel-screen: debug

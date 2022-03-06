@@ -27,8 +27,10 @@ add_executable(ipfixer
 	src/logging.cpp
 	src/main.cpp
 	src/net.cpp
+	src/net-collect.cpp
 	src/netflow-v5.cpp
 	src/netflow-v9.cpp
+	src/sflow.cpp
 	src/str.cpp
 	src/time.cpp
 	src/yaml-helpers.cpp

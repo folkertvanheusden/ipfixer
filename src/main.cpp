@@ -21,8 +21,10 @@
 #include "ipfix.h"
 #include "logging.h"
 #include "net.h"
+#include "net-collect.h"
 #include "netflow-v5.h"
 #include "netflow-v9.h"
+#include "sflow.h"
 #include "yaml-helpers.h"
 
 
@@ -208,16 +210,18 @@ int main(int argc, char *argv[])
 
 		// port to listen on
 		int         listen_port = yaml_get_int   (config, "listen-port", "UDP port to listen on");
-		std::string protocol    = yaml_get_string(config, "protocol", "protocol to accept; \"ipfix\", \"v5\" or \"v9\" (v5/v9 are NetFlow)");
+		std::string protocol    = yaml_get_string(config, "protocol", "protocol to accept; \"ipfix\", \"v5\", \"v9\" (v5/v9 are NetFlow) or \"sflow\"");
 
-		ipfix *i = nullptr;
+		net_collect *processer = nullptr;
 
 		if (protocol == "ipfix")
-			i = new ipfix();
+			processer = new ipfix();
 		else if (protocol == "v9")
-			i = new netflow_v9();
+			processer = new netflow_v9();
 		else if (protocol == "v5")
-			i = new netflow_v5();
+			processer = new netflow_v5();
+		else if (protocol == "sflow")
+			processer = new sflow();
 		else
 			error_exit(false, "Protocol \"%s\" not supported/understood", protocol.c_str());
 
@@ -253,13 +257,13 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			if (i->process_packet(buffer, rrc, db) == false)
-				dolog(ll_error, "main: problem processing ipfix packet");
+			if (processer->process_packet(buffer, rrc, db) == false)
+				dolog(ll_error, "main: problem processing packet");
 		}
 
 		close(fd);
 
-		delete i;
+		delete processer;
 
 		delete db;
 	}

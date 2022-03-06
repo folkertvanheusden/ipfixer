@@ -65,6 +65,26 @@ uint64_t get_net_long_long(const uint8_t *const p)
 	return out;
 }
 
+void put_net_long(uint8_t *const p, const uint32_t v)
+{
+	p[0] = v >> 24;
+	p[1] = v >> 16;
+	p[2] = v >>  8;
+	p[3] = v;
+}
+
+void put_net_long_long(uint8_t *const p, const uint64_t v)
+{
+	p[0] = v >> 56;
+	p[1] = v >> 48;
+	p[2] = v >> 40;
+	p[3] = v >> 32;
+	p[4] = v >> 24;
+	p[5] = v >> 16;
+	p[6] = v >>  8;
+	p[7] = v;
+}
+
 int connect_to(const std::string & host, const int portnr)
 {
 	struct addrinfo hints = { 0 };
