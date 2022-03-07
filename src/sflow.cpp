@@ -94,6 +94,14 @@ std::optional<std::string> SFLOS_name_to_str(const SFLOS_name type)
 	return { };
 }
 
+std::string get_SFLString(buffer & b)
+{
+	uint32_t string_length = b.get_net_long();
+	uint32_t get_length = (string_length + 3) & ~3;
+
+	return b.get_string(get_length);
+}
+
 sflow::sflow()
 {
 	sflcounters_jump_table.insert({ SFLCOUNTERS_GENERIC,
@@ -596,8 +604,7 @@ bool sflow::process_counters_sample_host_nio(const uint32_t sequence_number, buf
 
 bool sflow::process_counters_sample_host_hid(const uint32_t sequence_number, buffer & b, db *const target)
 {
-	uint32_t    hostname_len     = (b.get_net_long() + 3) & ~3;
-	std::string hostname         = b.get_string(hostname_len);
+	std::string hostname         = get_SFLString(b);
 
 	dolog(ll_debug, "sflow::process_counters_sample_host_hid: hostname: %s", hostname.c_str());
 
@@ -625,8 +632,7 @@ bool sflow::process_counters_sample_host_hid(const uint32_t sequence_number, buf
 
 	dolog(ll_debug, "sflow::process_counters_sample_host_hid: os name: %s", os_name_str.value().c_str());
 
-	uint32_t    os_release_len   = (b.get_net_long() + 3) & ~3;
-	std::string os_release       = b.get_string(os_release_len);
+	std::string os_release       = get_SFLString(b);
 
 	dolog(ll_debug, "sflow::process_counters_sample_host_hid: os release: %s", os_release.c_str());
 
@@ -673,8 +679,7 @@ bool sflow::process_counters_ethernet(const uint32_t sequence_number, buffer & b
 
 bool sflow::process_counters_portname(const uint32_t sequence_number, buffer & b, db *const target)
 {
-	uint32_t    name_len       = b.get_net_long();
-	std::string interface_name = b.get_string(name_len);
+	std::string interface_name = get_SFLString(b);
 
 	// this is static information, do not insert into database
 
@@ -719,7 +724,7 @@ bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *cons
 		auto it = sflcounters_jump_table.find(SFLCounters_type_tag(record_type));
 
 		if (it != sflcounters_jump_table.end()) {
-			dolog(ll_warning, "sflow::process_counters_sample: invoke processor for \"%s\" counters (record type %u)", it->second.second.c_str(), record_type);
+			dolog(ll_debug, "sflow::process_counters_sample: invoke processor for \"%s\" counters (record type %u)", it->second.second.c_str(), record_type);
 
 			if (it->second.first(sequence_number, record, target) == false) {
 				dolog(ll_warning, "sflow::process_counters_sample: failed to process \"%s\" counters (record type %u)", it->second.second.c_str(), record_type);
@@ -743,6 +748,12 @@ bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *cons
 	return true;
 }
 
+bool sflow::process_flow_sample(buffer & b, const bool is_expanded, db *const target)
+{
+	// TODO
+	return true;
+}
+
 bool sflow::process_packet(const uint8_t *const packet, const int packet_size, db *const target)
 {
 	buffer b(packet, packet_size);
@@ -751,6 +762,7 @@ bool sflow::process_packet(const uint8_t *const packet, const int packet_size, d
 
 	if (packet_size < SFL_MIN_DATAGRAM_SIZE) {
 		dolog(ll_warning, "sflow::process_packet: packet too small (%d bytes, expecting %zu) - not an SFLOW packet?", packet_size, SFL_MIN_DATAGRAM_SIZE);
+		dolog(ll_debug, "sflow::process_packet: packet too small, contents: %s", b.dump(true).c_str());
 
 		return false;
 	}
@@ -795,8 +807,16 @@ bool sflow::process_packet(const uint8_t *const packet, const int packet_size, d
 
 		buffer record = b.get_segment(record_length);
 
-		if (record_type == SFLCOUNTERS_SAMPLE ||
-		    record_type == SFLCOUNTERS_SAMPLE_EXPANDED) {
+		if (record_type == SFLFLOW_SAMPLE ||
+				record_type == SFLFLOW_SAMPLE_EXPANDED) {
+			if (process_flow_sample(record, record_type == SFLFLOW_SAMPLE_EXPANDED, target) == false) {
+				dolog(ll_warning, "sflow::process_packet: problem processing %sflow-sample", record_type == SFLFLOW_SAMPLE_EXPANDED ? "expanded " : "");
+
+				return false;
+			}
+		}
+		else if (record_type == SFLCOUNTERS_SAMPLE ||
+				record_type == SFLCOUNTERS_SAMPLE_EXPANDED) {
 			if (process_counters_sample(record, record_type == SFLCOUNTERS_SAMPLE_EXPANDED, target) == false) {
 				dolog(ll_warning, "sflow::process_packet: problem processing %scounters-sample", record_type == SFLCOUNTERS_SAMPLE_EXPANDED ? "expanded " : "");
 

@@ -35,6 +35,8 @@ protected:
 
 	bool process_counters_sample(buffer & record, const bool is_expanded, db *const target);
 
+	bool process_flow_sample    (buffer & b, const bool is_expanded, db *const target);
+
 public:
 	sflow();
 	virtual ~sflow();
