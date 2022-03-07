@@ -3,6 +3,7 @@
 
 #include "buffer.h"
 #include "net.h"
+#include "str.h"
 
 
 buffer::buffer(const uint8_t *p, const int size) : p(p), size(size)
@@ -146,4 +147,18 @@ uint64_t get_variable_size_integer(buffer & data_source, const int len)
 void buffer::reset()
 {
 	o = 0;
+}
+
+std::string buffer::dump(const bool everything)
+{
+	std::string out;
+
+	for(int i=everything ? 0 : o; i<size; i++) {
+		if (i)
+			out += myformat(" %02x", p[i]);
+		else
+			out += myformat("%02x", p[i]);
+	}
+
+	return out;
 }

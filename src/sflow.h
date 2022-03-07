@@ -30,6 +30,8 @@ protected:
 	bool process_counters_sample_host_cpu(const uint32_t sequence_number, buffer & b, db *const target);
 	bool process_counters_sample_host_nio(const uint32_t sequence_number, buffer & b, db *const target);
 	bool process_counters_sample_host_hid(const uint32_t sequence_number, buffer & b, db *const target);
+	bool process_counters_ethernet       (const uint32_t sequence_number, buffer & b, db *const target);
+	bool process_counters_portname       (const uint32_t sequence_number, buffer & b, db *const target);
 
 	bool process_counters_sample(buffer & record, const bool is_expanded, db *const target);
 

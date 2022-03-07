@@ -22,6 +22,78 @@ std::optional<std::string> get_SFLAddress(buffer & b)
        return { };
 }
 
+std::optional<std::string> SFLMachine_type_to_str(const SFLMachine_type type)
+{
+	switch(type) {
+		case SFLMT_unknown:
+			return "unknown";
+		case SFLMT_other:
+			return "other";
+		case SFLMT_x86:
+			return "x86";
+		case SFLMT_x86_64:
+			return "x86-64";
+		case SFLMT_ia64:
+			return "ia64";
+		case SFLMT_sparc:
+			return "sparc";
+		case SFLMT_alpha:
+			return "alpha";
+		case SFLMT_powerpc:
+			return "powerpc";
+		case SFLMT_m68k:
+			return "m68k";
+		case SFLMT_mips:
+			return "mips";
+		case SFLMT_arm:
+			return "arm";
+		case SFLMT_hppa:
+			return "hppa";
+		case SFLMT_s390:
+			return "s390";
+		default:
+			dolog(ll_warning, "SFLMachine_type_to_str: machine type %u is not supported", type);
+	}
+
+	return { };
+}
+
+std::optional<std::string> SFLOS_name_to_str(const SFLOS_name type)
+{
+	switch(type) {
+		case SFLOS_unknown:
+			return "unknown";
+		case SFLOS_other:
+			return "other";
+		case SFLOS_linux:
+			return "linux";
+		case SFLOS_windows:
+			return "windows";
+		case SFLOS_darwin:
+			return "darwin";
+		case SFLOS_hpux:
+			return "hpux";
+		case SFLOS_aix:
+			return "aix";
+		case SFLOS_dragonfly:
+			return "dragonfly";
+		case SFLOS_freebsd:
+			return "freebsd";
+		case SFLOS_netbsd:
+			return "netbsd";
+		case SFLOS_openbsd:
+			return "openbsd";
+		case SFLOS_osf:
+			return "osf";
+		case SFLOS_solaris:
+			return "solaris";
+		default:
+			dolog(ll_warning, "SFLOS_name_to_str: OS type %u is not supported", type);
+	}
+
+	return { };
+}
+
 sflow::sflow()
 {
 	sflcounters_jump_table.insert({ SFLCOUNTERS_GENERIC,
@@ -89,6 +161,18 @@ sflow::sflow()
 				return this->sflow::process_counters_sample_host_hid(sequence_number, b, target);
 				},
 			"HID" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_ETHERNET,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_ethernet(sequence_number, b, target);
+				},
+			"Ethernet" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_PORTNAME,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_portname(sequence_number, b, target);
+				},
+			"portname" } });
 }
 
 sflow::~sflow()
@@ -512,6 +596,86 @@ bool sflow::process_counters_sample_host_nio(const uint32_t sequence_number, buf
 
 bool sflow::process_counters_sample_host_hid(const uint32_t sequence_number, buffer & b, db *const target)
 {
+	uint32_t    hostname_len     = (b.get_net_long() + 3) & ~3;
+	std::string hostname         = b.get_string(hostname_len);
+
+	dolog(ll_debug, "sflow::process_counters_sample_host_hid: hostname: %s", hostname.c_str());
+
+	buffer      uuid             = b.get_segment(16);
+
+	uint32_t    machine_type     = b.get_net_long();
+	auto        machine_type_str = SFLMachine_type_to_str(SFLMachine_type(machine_type));
+
+	if (machine_type_str.has_value() == false) {
+		dolog(ll_debug, "sflow::process_counters_sample_host_hid: problem converting machine type %u to string", machine_type);
+
+		return false;
+	}
+
+	dolog(ll_debug, "sflow::process_counters_sample_host_hid: machine type: %s", machine_type_str.value().c_str());
+
+	uint32_t    os_name          = b.get_net_long();
+	auto        os_name_str      = SFLOS_name_to_str(SFLOS_name(os_name));
+
+	if (os_name_str.has_value() == false) {
+		dolog(ll_debug, "sflow::process_counters_sample_host_hid: problem converting OS type %u to string", os_name);
+
+		return false;
+	}
+
+	dolog(ll_debug, "sflow::process_counters_sample_host_hid: os name: %s", os_name_str.value().c_str());
+
+	uint32_t    os_release_len   = (b.get_net_long() + 3) & ~3;
+	std::string os_release       = b.get_string(os_release_len);
+
+	dolog(ll_debug, "sflow::process_counters_sample_host_hid: os release: %s", os_release.c_str());
+
+	// this is static information, do not insert into database
+
+	return true;
+}
+
+bool sflow::process_counters_ethernet(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsAlignmentErrors");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsFCSErrors");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsSingleCollisionFrames");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsMultipleCollisionFrames");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsSQETestErrors");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsDeferredTransmissions");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsLateCollisions");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsExcessiveCollisions");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsInternalMacTransmitErrors");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsCarrierSenseErrors");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsFrameTooLongs");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsInternalMacReceiveErrors");
+	add_to_db_record_uint32_t(&db_record, b, "dot3StatsSymbolErrors");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_ethernet: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_ethernet: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
+bool sflow::process_counters_portname(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	uint32_t    name_len       = b.get_net_long();
+	std::string interface_name = b.get_string(name_len);
+
 	// this is static information, do not insert into database
 
 	return true;

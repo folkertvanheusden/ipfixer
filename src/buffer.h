@@ -37,6 +37,8 @@ public:
 	int         get_n_bytes_left() const;
 
 	void        reset();
+
+	std::string dump(const bool everything);
 };
 
 uint64_t get_variable_size_integer(buffer & data_source, const int len);
