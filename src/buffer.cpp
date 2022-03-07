@@ -142,3 +142,8 @@ uint64_t get_variable_size_integer(buffer & data_source, const int len)
 
 	return out;
 }
+
+void buffer::reset()
+{
+	o = 0;
+}

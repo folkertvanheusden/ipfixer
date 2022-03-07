@@ -46,7 +46,7 @@ sflow::sflow()
 			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
 				return this->sflow::process_counters_sample_tcp(sequence_number, b, target);
 				},
-			"UDP" } });
+			"TCP" } });
 
 	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_ICMP,
 			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
@@ -77,6 +77,18 @@ sflow::sflow()
 				return this->sflow::process_counters_sample_host_cpu(sequence_number, b, target);
 				},
 			"CPU" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_NIO,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_host_nio(sequence_number, b, target);
+				},
+			"NIO" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_HID,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_host_hid(sequence_number, b, target);
+				},
+			"HID" } });
 }
 
 sflow::~sflow()
@@ -100,6 +112,13 @@ void sflow::add_to_db_record_uint64_t(db_record_t *const record, buffer & b, con
 void sflow::add_to_db_record_float_t(db_record_t *const record, buffer & b, const std::string & name)
 {
 	db_record_data_t data_record { b.get_segment(4), dt_float32, 4 };
+
+	record->data.insert({ name, data_record });
+}
+
+void sflow::add_to_db_record_mac_t(db_record_t *const record, buffer & b, const std::string & name)
+{
+	db_record_data_t data_record { b.get_segment(6), dt_macAddress, 6 };
 
 	record->data.insert({ name, data_record });
 }
@@ -148,6 +167,11 @@ bool sflow::process_counters_sample_generic(const uint32_t sequence_number, buff
 
 bool sflow::process_counters_sample_adaptors(const uint32_t sequence_number, buffer & b, db *const target)
 {
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
 	uint32_t num_adaptors = b.get_net_long();
 
 	dolog(ll_debug, "sflow::process_counters_sample_adaptors: number of adaptors: %u", num_adaptors);
@@ -160,9 +184,11 @@ bool sflow::process_counters_sample_adaptors(const uint32_t sequence_number, buf
 		for(uint32_t m=0; m<num_macs; m++) {
 			buffer mac = b.get_segment(8);  // 8!
 
-			dolog(ll_debug, "sflow::process_counters_sample_adaptors: interface %u (%u/%u), mac (%u/%u): %02x:%02x:%02x:%02x:%02x:%02x", ifIndex, i + 1, num_adaptors, m + 1, num_macs, mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte());
+			add_to_db_record_mac_t(&db_record, mac, myformat("interface-%u", ifIndex));
 
-			// TODO
+			mac.reset();
+
+			dolog(ll_debug, "sflow::process_counters_sample_adaptors: interface %u (%u/%u), mac (%u/%u): %02x:%02x:%02x:%02x:%02x:%02x", ifIndex, i + 1, num_adaptors, m + 1, num_macs, mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte(), mac.get_byte());
 		}
 	}
 
@@ -171,6 +197,12 @@ bool sflow::process_counters_sample_adaptors(const uint32_t sequence_number, buf
 
                 return false;
         }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_adaptors: failed inserting record into database");
+
+		return false;
+	}
 
 	return true;
 }
@@ -443,6 +475,44 @@ bool sflow::process_counters_sample_host_cpu(const uint32_t sequence_number, buf
 
 		return false;
 	}
+
+	return true;
+}
+
+bool sflow::process_counters_sample_host_nio(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	add_to_db_record_uint64_t(&db_record, b, "nio_bytes_in");
+	add_to_db_record_uint32_t(&db_record, b, "nio_pkts_in");
+	add_to_db_record_uint32_t(&db_record, b, "nio_errs_in");
+	add_to_db_record_uint32_t(&db_record, b, "nio_drops_in");
+	add_to_db_record_uint64_t(&db_record, b, "nio_bytes_out");
+	add_to_db_record_uint32_t(&db_record, b, "nio_pkts_out");
+	add_to_db_record_uint32_t(&db_record, b, "nio_errs_out");
+	add_to_db_record_uint32_t(&db_record, b, "nio_drops_out");
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_nio: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_nio: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
+bool sflow::process_counters_sample_host_hid(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	// this is static information, do not insert into database
 
 	return true;
 }

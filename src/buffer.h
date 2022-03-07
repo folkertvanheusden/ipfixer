@@ -35,6 +35,8 @@ public:
 
 	bool        end_reached() const;
 	int         get_n_bytes_left() const;
+
+	void        reset();
 };
 
 uint64_t get_variable_size_integer(buffer & data_source, const int len);
