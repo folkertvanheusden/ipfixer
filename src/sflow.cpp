@@ -71,6 +71,12 @@ sflow::sflow()
 				return this->sflow::process_counters_sample_host_mem(sequence_number, b, target);
 				},
 			"MEM" } });
+
+	sflcounters_jump_table.insert({ SFLCOUNTERS_HOST_CPU,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_counters_sample_host_cpu(sequence_number, b, target);
+				},
+			"CPU" } });
 }
 
 sflow::~sflow()
@@ -87,6 +93,13 @@ void sflow::add_to_db_record_uint32_t(db_record_t *const record, buffer & b, con
 void sflow::add_to_db_record_uint64_t(db_record_t *const record, buffer & b, const std::string & name)
 {
 	db_record_data_t data_record { b.get_segment(8), dt_unsigned32, 8 };
+
+	record->data.insert({ name, data_record });
+}
+
+void sflow::add_to_db_record_float_t(db_record_t *const record, buffer & b, const std::string & name)
+{
+	db_record_data_t data_record { b.get_segment(4), dt_float32, 4 };
 
 	record->data.insert({ name, data_record });
 }
@@ -379,6 +392,54 @@ bool sflow::process_counters_sample_host_mem(const uint32_t sequence_number, buf
 
 	if (target->insert(db_record) == false) {
                 dolog(ll_warning, "sflow::process_counters_sample_host_mem: failed inserting record into database");
+
+		return false;
+	}
+
+	return true;
+}
+
+bool sflow::process_counters_sample_host_cpu(const uint32_t sequence_number, buffer & b, db *const target)
+{
+	db_record_t db_record;
+	db_record.export_time           = time(nullptr);  // not in sflow data
+	db_record.sequence_number       = sequence_number;
+	db_record.observation_domain_id = 0;
+
+	bool december_2014_addition     = b.get_n_bytes_left() > 68;
+
+	add_to_db_record_float_t (&db_record, b, "cpu_load_one");
+	add_to_db_record_float_t (&db_record, b, "cpu_load_five");
+	add_to_db_record_float_t (&db_record, b, "cpu_load_fifteen");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_proc_run");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_proc_total");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_num");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_speed");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_uptime");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_user");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_nice");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_system");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_idle");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_wio");
+	add_to_db_record_uint32_t(&db_record, b, "cpuintr");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_sintr");
+	add_to_db_record_uint32_t(&db_record, b, "cpuinterrupts");
+	add_to_db_record_uint32_t(&db_record, b, "cpu_contexts");
+
+	if (december_2014_addition) {
+		add_to_db_record_uint32_t(&db_record, b, "cpu_steal");
+		add_to_db_record_uint32_t(&db_record, b, "cpu_guest");
+		add_to_db_record_uint32_t(&db_record, b, "cpu_guest_nice");
+	}
+
+        if (b.end_reached() == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_cpu: data (packet) underflow (%d bytes left)", b.get_n_bytes_left());
+
+                return false;
+        }
+
+	if (target->insert(db_record) == false) {
+                dolog(ll_warning, "sflow::process_counters_sample_host_cpu: failed inserting record into database");
 
 		return false;
 	}
