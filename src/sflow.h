@@ -13,6 +13,8 @@ class sflow : public net_collect
 private:
 	std::map<SFLCounters_type_tag, std::pair<std::function<bool(const uint32_t, buffer & b, db *const)>, std::string> > sflcounters_jump_table;
 
+	std::map<SFLFlow_type_tag    , std::pair<std::function<bool(const uint32_t, buffer & b, db *const)>, std::string> > sflow_samples_jump_table;
+
 protected:
 	void add_to_db_record_uint32_t(db_record_t *const record, buffer & b, const std::string & name);
 	void add_to_db_record_uint64_t(db_record_t *const record, buffer & b, const std::string & name);
@@ -34,6 +36,8 @@ protected:
 	bool process_counters_portname       (const uint32_t sequence_number, buffer & b, db *const target);
 
 	bool process_counters_sample(buffer & record, const bool is_expanded, db *const target);
+
+	bool process_flow_samples_headers    (const uint32_t sequence_number, buffer & b, db *const target);
 
 	bool process_flow_sample    (buffer & b, const bool is_expanded, db *const target);
 

@@ -102,8 +102,28 @@ std::string get_SFLString(buffer & b)
 	return b.get_string(get_length);
 }
 
+std::optional<std::string> format_port_number(const uint32_t type, const uint32_t value)
+{
+	if (type == 0)
+		return myformat("%u", value);
+
+	if (type == 1)
+		return myformat("dropCode %u", value);
+
+	if (type == 2)
+		return myformat("multiple %u", value);
+
+	if (type == 3)
+		return myformat("format==3 %u", value);
+
+	dolog(ll_warning, "format_port_number: formatting type %u is unknown", type);
+
+	return { };
+}
+
 sflow::sflow()
 {
+	// counters
 	sflcounters_jump_table.insert({ SFLCOUNTERS_GENERIC,
 			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
 				return this->sflow::process_counters_sample_generic(sequence_number, b, target);
@@ -181,6 +201,15 @@ sflow::sflow()
 				return this->sflow::process_counters_portname(sequence_number, b, target);
 				},
 			"portname" } });
+
+	// flow samples
+	sflow_samples_jump_table.insert({ SFLFLOW_HEADER,
+			{ [=](const uint32_t sequence_number, buffer & b, db *const target) {
+				return this->sflow::process_flow_samples_headers(sequence_number, b, target);
+				},
+			"header" } });
+
+	// TODO
 }
 
 sflow::~sflow()
@@ -750,7 +779,93 @@ bool sflow::process_counters_sample(buffer & b, const bool is_expanded, db *cons
 
 bool sflow::process_flow_sample(buffer & b, const bool is_expanded, db *const target)
 {
-	// TODO
+	uint32_t sequence_number = b.get_net_long();
+
+	dolog(ll_debug, "sflow::process_flow_sample: sequence number: %u", sequence_number);
+
+	uint32_t ds_class           = 0;
+	uint32_t ds_index           = 0;
+
+	if (is_expanded) {
+		ds_class            = b.get_net_long();
+		ds_index            = b.get_net_long();
+	}
+	else {
+		uint32_t sampler_id = b.get_net_long();
+		ds_class            = sampler_id >> 24;
+		ds_index            = sampler_id & 0x00ffffff;
+	}
+
+	dolog(ll_debug, "sflow::process_flow_sample: ds class       : %u", ds_class);
+	dolog(ll_debug, "sflow::process_flow_sample: ds index       : %u", ds_index);
+
+	uint32_t mean_skip_count    = b.get_net_long();
+	uint32_t sample_pool        = b.get_net_long();
+	uint32_t drop_events        = b.get_net_long();
+
+	dolog(ll_debug, "sflow::process_flow_sample: mean skip count: %u", mean_skip_count);
+	dolog(ll_debug, "sflow::process_flow_sample: sample pool    : %u", sample_pool);
+	dolog(ll_debug, "sflow::process_flow_sample: drop events    : %u", drop_events);
+
+	uint32_t input_port_format  = 0;
+	uint32_t input_port         = 0;
+	uint32_t output_port_format = 0;
+	uint32_t output_port        = 0;
+
+	if (is_expanded) {
+		input_port_format   = b.get_net_long();
+		input_port          = b.get_net_long();
+		output_port_format  = b.get_net_long();
+		output_port         = b.get_net_long();
+	}
+	else {
+		uint32_t input      = b.get_net_long();
+		uint32_t output     = b.get_net_long();
+
+		input_port_format   = input  >> 30;
+		output_port_format  = output >> 30;
+		input_port          = input  & 0x3fffffff;
+		output_port         = output & 0x3fffffff;
+	}
+
+	auto input_port_str = format_port_number(input_port_format, input_port);
+
+	if (input_port_str.has_value())
+		dolog(ll_debug, "sflow::process_flow_sample: input port     : %s", input_port_str.value().c_str());
+
+	auto output_port_str = format_port_number(output_port_format, output_port);
+
+	if (output_port_str.has_value())
+		dolog(ll_debug, "sflow::process_flow_sample: output port    : %s", output_port_str.value().c_str());
+
+	uint32_t number_of_elements = b.get_net_long();
+
+	for(uint32_t i=0; i<number_of_elements; i++) {
+		uint32_t element_type     = b.get_net_long();
+		uint32_t element_length   = b.get_net_long();
+
+		std::string flowBlock_tag = myformat("%u:%u", element_type >> 12, element_type & 0xfff);
+
+		buffer   record           = b.get_segment(element_length);
+
+		auto it = sflow_samples_jump_table.find(SFLFlow_type_tag(element_type));
+
+		if (it != sflow_samples_jump_table.end()) {
+			dolog(ll_debug, "sflow::process_flow_sample: invoke processor for \"%s\" flow (element type %u)", it->second.second.c_str(), element_type);
+
+			if (it->second.first(sequence_number, record, target) == false) {
+				dolog(ll_warning, "sflow::process_flow_sample: failed to process \"%s\" flow (element type %u)", it->second.second.c_str(), element_type);
+
+				return false;
+			}
+		}
+		else {
+			dolog(ll_warning, "sflow::process_flow_sample: type of flow record %u not supported", element_type);
+
+			return false;
+		}
+	}
+
 	return true;
 }
 
